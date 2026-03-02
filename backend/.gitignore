@@ -93,7 +93,6 @@ temp/
 *.cert
 
 # Backup files
-*.backup
 *.bak
 *.old
 

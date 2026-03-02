@@ -1,0 +1,18 @@
+FROM postgres:16-alpine
+
+# Install AWS CLI and common tools
+RUN apk add --no-cache \
+    aws-cli \
+    bash \
+    gzip \
+    curl \
+    dos2unix
+
+# Copy backup scripts
+COPY backup.sh /scripts/backup.sh
+COPY restore.sh /scripts/restore.sh
+
+# Fix Windows CRLF → Linux LF line endings
+RUN dos2unix /scripts/*.sh && chmod +x /scripts/*.sh
+
+ENTRYPOINT ["/scripts/backup.sh", "--cron"]
