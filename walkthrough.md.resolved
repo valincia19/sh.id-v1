@@ -1,0 +1,37 @@
+# System Cleanup & Domain Architecture Walkthrough
+
+## 1. Sandbox Removal (SANBOK)
+The "Sandbox" mode was previously used as a development backdoor to bypass the monetization providers (like Work.ink) without actually completing an ad loop. 
+
+**Actions Taken:**
+- **Deleted `sandboxPage` Controller:** The entire HTML view injecting the sandbox interface in [backend/src/modules/keys/monetization.controller.js](file:///c:/docker/next-js/scripthub.id/backend/src/modules/keys/monetization.controller.js) was purged.
+- **Removed Sandbox Express Routes:** The routing endpoint `GET /public/sandbox/:provider` in [backend/src/modules/keys/keys.routes.js](file:///c:/docker/next-js/scripthub.id/backend/src/modules/keys/keys.routes.js) was deleted to close the access vector.
+- **Stripped Service Bypass Logic:** In [backend/src/modules/keys/monetization.service.js](file:///c:/docker/next-js/scripthub.id/backend/src/modules/keys/monetization.service.js), the checks looking for `providerToken === "sandbox-test-token"` were completely removed. Development servers now use the real provider validation logic.
+
+## 2. Double Domain Resolution (getkey vs getfreekey)
+The platform possessed two domains for the monolithic key generation service: the legacy `getkey.scripthub.id` and the new official `getfreekey.scripthub.id`. 
+
+**Actions Taken:**
+- **Next.js Middleware 301 Permanent Redirect:** Added a strict redirection rule in [src/middleware.ts](file:///c:/docker/next-js/scripthub.id/src/middleware.ts). Any requests hitting `getkey.` are now permanently rewritten to point to the secure `getfreekey.` equivalent. 
+- **Internal Reference Updates:**
+  - Standardized all `isBuiltinKey` URL detections in the Studio to check for `getfreekey...` instead of the legacy endpoint.
+  - Updated the official documentation markdown layouts.
+
+## 3. Configuration Hardening (Fail-Fast Pattern)
+Critical vulnerabilities existed where the environment configurations ([.env](file:///c:/docker/next-js/scripthub.id/openapi/.env)) silently fell back to insecure default strings or `localhost` assignments if the environment variables failed to load.
+
+**Actions Taken:**
+- **Backend & OpenAPI ([config/index.js](file:///c:/docker/next-js/scripthub.id/backend/src/config/index.js)):** 
+  - Purged all `|| "your-secret-key-change-this"` strings.
+  - Rewrote the loader to use a strict [requireEnv()](file:///c:/docker/next-js/scripthub.id/backend/src/config/index.js#17-33) helper that immediately calls `throw new Error()` on startup if `JWT_SECRET`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, or strict CORS parameters are missing.
+  - Completely neutralized implicit `NODE_ENV` fallbacks.
+- **Next.js Frontend ([src/lib/config/env.ts](file:///c:/docker/next-js/scripthub.id/src/lib/config/env.ts)):**
+  - Created a centralized, isomorphic [getEnv()](file:///c:/docker/next-js/scripthub.id/src/lib/config/env.ts#6-32) getter.
+  - Scanned and replaced over 10 raw references to `process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"`. The frontend will now natively crash the deployment pipeline rather than compiling against `localhost` boundaries in production.
+  - Stripped `1x00000000000000000000AA` Turnstile test key fallback during production rendering.
+
+## Verification Checklist
+- [x] Backend safely crashes immediately if booted without a [.env](file:///c:/docker/next-js/scripthub.id/openapi/.env) file instead of binding vulnerable dummy secrets.
+- [x] Next.js Edge Middleware correctly reroutes wildcard traffic (`getkey.` -> `getfreekey.`).
+- [x] Frontend dynamically halts compilation/runtime if `NEXT_PUBLIC_API_URL` is configured to `localhost` inside a production build context.
+- [x] Zero CORS whitelisting leaks involving legacy endpoints or implicit fallbacks exist inside the backend routers.

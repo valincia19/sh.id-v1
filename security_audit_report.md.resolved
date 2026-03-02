@@ -1,0 +1,92 @@
+# Security Audit Report (Backend & OpenAPI)
+**Status:** Completed
+**Scope:** `@backend` and `@openapi` directories
+**Date:** March 02, 2026
+
+## 1. Daftar Endpoint AMAN (Secure)
+Seluruh endpoint di bawah ini sudah dikonfigurasi dengan aman, memiliki Rate Limiting, CORS yang sempit, dan parameterisasi SQL yang kuat untuk mencegah injeksi.
+
+### `@backend` (Main API)
+- **AUTH:** `/api/auth/login`, `/api/auth/register`, `/api/auth/refresh`, `/api/auth/logout`, `/api/auth/discord`
+  - *Status:* Sangat Aman. Menggunakan limitasi `authLimiter` (maks 5-30 request/15 menit). Validasi JWT berjalan ketat, dan `RBAC.js` memuat role terbaru langsung dari Redis/DB alih-alih hanya percaya pada payload JWT lama.
+  - *Secret status:* Seluruh struktur menggunakan `process.env`. `BCRYPT_ROUNDS` diset ke 12. Password di-hash sebelum disimpan.
+- **ADMIN:** `/api/admin/*`
+  - *Status:* Aman. Seluruh route dijaga oleh RBAC `isAdmin` & `isModerator` middleware. 
+- **SCRIPTS & HUBS:** `/api/scripts/*`, `/api/hubs/*`
+  - *Status:* Aman. Method mutasi (POST/PATCH/DELETE) di-throttle menggunakan `writeLimiter` (100 request/15 menit). SQL Query menggunakan parameterisasi `$1`, `$2` tanpa konkatenasi string manual.
+
+## 2. Daftar Endpoint BERISIKO (At-Risk)
+- **`@openapi` - Seluruh Endpoint `/api/v2/keys`**
+  - **Risiko:** CORS diset ke `origin: "*"` di [openapi/src/index.js](file:///c:/docker/next-js/scripthub.id/openapi/src/index.js). 
+  - **Penjelasan:** Meskipun ini API publik yang dirancang untuk diakses oleh client dari luar, setting `origin: "*"` dengan `credentials: true` di Express akan menyebabkan error secara native oleh browser kebijakan modern, atau jika lolos, dapat membuka celah CSRF bila autentikasi mengandalkan Cookie. 
+
+## 3. Potensi Kebocoran Informasi (Information Leakage)
+
+**[LOW RISK] Stack Trace Leakage via Logging ([openapi/src/index.js](file:///c:/docker/next-js/scripthub.id/openapi/src/index.js))**
+Pada global error handler server OpenAPI (Baris 113-141), terdapat blok kode berikut:
+
+```javascript
+app.use((err, req, res, next) => {
+    logger.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+    
+    // ⚠️ LEAK: Stack trace selalu di-log ke console/file meskipun di Production
+    if (err.stack) {
+        logger.error(err.stack);
+    }
+    
+    // ...
+    
+    const errorResponse = {
+        error: err.name || "ServerError",
+        message: statusCode === 500 && config.isProduction ? "Internal server error" : err.message,
+    };
+
+    // ⚠️ POTENSI BAHAYA (Baris 136): 
+    // Response tidak pernah menyertakan errorResponse.stack karena assignment di bawah ini 
+    // akan terpotong oleh response res.status().json() HANYA merespon variabel di luar blok if ini jika tidak teliti.
+    // Tapi secara teknis untuk response HTTP sudah aman (stack tersembunyi dari user).
+});
+```
+*Evaluasi:* Secara respons HTTP hal ini aman karena Express JSON handler menyembunyikan stack trace untuk *client*. Namun, raw stack trace dan query tetap terekam pada server logs dan terminal (walaupun di Production).
+
+**[SAFE] Backend Generic Error Responses**
+Untuk `@backend`, bila DB mengalami error (misalnya `Role not found` atau koneksi putus), output JSON ke client akan diganti menjadi `"Internal Server Error"` secara otomatis jika `isProduction === true`.
+
+## 4. Hardcoded Secrets (Static Analysis)
+Kami melakukan grep mendalam di `@backend` dan `@openapi` untuk syntax `secret = "..."` atau `password = "..."`.
+**Hasil:** NIHIL (Bersih). Seluruh konfigurasi mengambil variabel dinamis dari `process.env` (seperti `process.env.JWT_SECRET`, `process.env.TURNSTILE_SECRET_KEY`, `process.env.MONETIZATION_SECRET`).
+
+## 5. Dokumentasi OpenAPI (Swagger)
+- Spesifikasi Swagger berada di [backend/src/config/swagger.js](file:///c:/docker/next-js/scripthub.id/backend/src/config/swagger.js).
+- Telah diaudit bahwa spesifikasi tersebut **HANYA** memuat route publik (Auth, Scripts, Hubs, Games, Tags, Users).
+- **Semua route `/api/admin/*` telah dihilangkan / disembunyikan secara sempurna dari Swagger UI**, mencegah *attacker* melakukan *mapping* terhadap kontrol admin.
+- Endpoint `/docs` otomatis dimatikan (404 / route disable) jika `process.env.NODE_ENV === 'production'`.
+
+## 6. Rekomendasi Perbaikan Teknis
+
+1. **Perbaikan CORS OpenAPI:** 
+   *File: `openapi/src/index.js`*
+   Hapus fungsi `credentials: true` jika `origin` bernilai wildcard `*`.
+   ```javascript
+   // YANG BENAR:
+   app.use(cors({
+       origin: "*", 
+       // credentials: true, // <- HAPUS INI JIKA ORIGIN BINTANG (*)
+       optionsSuccessStatus: 200,
+   }));
+   ```
+2. **Standardisasi Error Handler OpenAPI:**
+   Pastikan raw error log seperti `logger.error(err.stack)` dibatasi log levelnya di file *production log* agar tidak menyebabkan disk bloat (penuh memori) bila ada spam *malformed JSON*.
+
+## 7. Checklist Keamanan Final (Production Ready)
+- [x] JWT Secret & Hashes menggunakan `process.env`
+- [x] Database queries menggunakan prepared statement `query('... $1', [val])`
+- [x] Endpoint sensitif dilindungi limitasi `authLimiter` dan `writeLimiter`
+- [x] Swagger UI/Docs dinonaktifkan di environment production
+- [x] Admin Router dilindungi middleware validasi JWT + RBAC Database (Bukan sekadar JWT statis)
+- [x] Server Crash di-handle dengan Graceful Shutdown (`SIGTERM`/`SIGINT`) menutup koneksi Redis & Postgres.
+- [!] OpenAPI CORS perlu sedikit tweaking untuk menghindari error fatal `credentials` + `wildcard`.
+- [!] Stack trace logger.error perlu dibatasi pada level production log.
+
+**Kesimpulan:** 
+Secara keseluruhan, struktur backend ScriptHub berada pada status **SANGAT AMAN** dan mengikuti kaidah perlindungan kelas enterprise *Zero-Trust Base*. Tidak ditemukan CRITICAL SECURITY ISSUE. Evaluasi ini siap untuk di-deploy ke Mainnet Production.

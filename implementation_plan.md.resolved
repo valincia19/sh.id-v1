@@ -1,0 +1,40 @@
+# System Cleanup & Domain Architecture Plan
+
+## 1. Penghapusan SANBOK (Sandbox)
+Sandbox saat ini digunakan sebagai bypass validasi token monetisasi (Work.ink) di environment development. Menghapus ini akan memastikan flow development 100% identik dengan production (atau menggunakan skip URL standard tanpa backdoor token).
+
+**File Terdampak & Tindakan:**
+- **[backend/src/modules/keys/keys.routes.js](file:///c:/docker/next-js/scripthub.id/backend/src/modules/keys/keys.routes.js)**
+  - *Action:* Hapus route `GET /public/sandbox/:provider`.
+- **[backend/src/modules/keys/monetization.controller.js](file:///c:/docker/next-js/scripthub.id/backend/src/modules/keys/monetization.controller.js)**
+  - *Action:* Hapus controller [sandboxPage](file:///c:/docker/next-js/scripthub.id/backend/src/modules/keys/monetization.controller.js#375-432) beserta view HTML injeksinya.
+- **[backend/src/modules/keys/monetization.service.js](file:///c:/docker/next-js/scripthub.id/backend/src/modules/keys/monetization.service.js)**
+  - *Action:* Hapus bypass `if (providerToken === "sandbox-test-token" && config.isDevelopment)`.
+  - *Action:* Hapus logic redirect ke `/api/keys/public/sandbox/`.
+
+## 2. Resolusi DOUBLE DOMAIN (getkey vs getfreekey)
+
+### Analisis & Risiko (CRITICAL CONFIGURATION ISSUE)
+Saat ini sistem secara de facto telah beralih ke `getfreekey.scripthub.id`. Namun:
+- Jika ada *user* mengakses link `getkey.scripthub.id` lama, Next.js Middleware tidak me-redirect ataupun me-rewrite traffic tersebut (Saat ini hanya memfilter `hostname.startsWith("getfreekey.")`).
+- Backend API (`corsOrigins`) sudah **tidak** me-whitelist `getkey.scripthub.id`, sehingga request dari domain lama pasti akan terkena **CORS Error** fatal.
+
+### Rekomendasi Arsitektur (Single Source of Truth)
+- **Official Domain:** `getfreekey.scripthub.id` (Prod) / `getfreekey.localhost:3000` (Dev).
+- **Strategi:** Menerapkan **301 Permanent Redirect** dari domain lama (`getkey.`) ke domain baru (`getfreekey.`) di level Next.js Middleware. Ini akan menyelamatkan semua link script lama yang tersebar di YouTube/Discord tanpa merusak flow CORS backend.
+
+**File Terdampak & Tindakan:**
+- **[src/middleware.ts](file:///c:/docker/next-js/scripthub.id/src/middleware.ts)**
+  - *Action:* Tambahkan interceptor: `if (hostname.startsWith("getkey.")) { return NextResponse.redirect("https://getfreekey...") }`.
+- **[src/app/(studio)/studio/scripts/[id]/edit/page.tsx](file:///c:/docker/next-js/scripthub.id/src/app/%28studio%29/studio/scripts/%5Bid%5D/edit/page.tsx)**
+  - *Action:* Update deteksi `isBuiltinKey` agar mendeteksi `getfreekey.scripthub.id` (bukan hanya `getkey.scripthub.id`).
+- **[src/lib/constants/changelog.ts](file:///c:/docker/next-js/scripthub.id/src/lib/constants/changelog.ts) & [docs/PROJECT_STRUCTURE.md](file:///c:/docker/next-js/scripthub.id/docs/PROJECT_STRUCTURE.md)**
+  - *Action:* Update penulisan dokumentasi dari `getkey` menjadi `getfreekey` untuk konsistensi internal.
+
+## 3. Checklist Final Sebelum Deploy Deploy
+- [ ] SANBOK backend route dihapus.
+- [ ] SANBOK controller HTML page dihapus.
+- [ ] SANBOK token bypass logic dihapus.
+- [ ] Next.js Middleware menambahkan 301 Redirect dari `getkey` -> `getfreekey`.
+- [ ] Studio Edit Script UI mendeteksi URL `getfreekey` dengan benar.
+- [ ] Tidak ada CORS whitelist yang mengarah ke `getkey` tertinggal di backend config.
