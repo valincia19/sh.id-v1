@@ -129,7 +129,7 @@ export const callbackWorkink = async (req, res) => {
         res.clearCookie("monetization_session", { path: "/" });
 
         // Redirect to frontend success page
-        const frontendUrl = config.getfreekeyUrl;
+        const frontendUrl = config.getkeyUrl;
         const successUrl = `${frontendUrl}/success?key=${encodeURIComponent(result.key)}&expires=${encodeURIComponent(result.expiresAt)}&slug=${encodeURIComponent(result.slug)}`;
         logger.info(`[MONETIZATION] callbackWorkink SUCCESS: redirecting to ${successUrl}`);
         res.redirect(successUrl);
@@ -164,7 +164,7 @@ export const callbackLinkvertise = async (req, res) => {
 
         res.clearCookie("monetization_session", { path: "/" });
 
-        const frontendUrl = config.getfreekeyUrl;
+        const frontendUrl = config.getkeyUrl;
         res.redirect(`${frontendUrl}/success?key=${encodeURIComponent(result.key)}&expires=${encodeURIComponent(result.expiresAt)}&slug=${encodeURIComponent(result.slug)}`);
     } catch (error) {
         const statusCode = error.statusCode || 500;
@@ -364,7 +364,7 @@ export const officialStatus = async (req, res) => {
  * Helper: redirect to frontend error page.
  */
 const redirectError = (res, message) => {
-    const frontendUrl = config.getfreekeyUrl;
+    const frontendUrl = config.getkeyUrl;
     res.redirect(`${frontendUrl}/error?message=${encodeURIComponent(message)}`);
 };
 
