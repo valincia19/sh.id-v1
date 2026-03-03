@@ -218,9 +218,9 @@ export const login = async (req, res) => {
     if (validationError) return;
 
     const { identifier, password } = req.body;
-    
+
     // Get client IP for lockout tracking
-    const ipAddress = req.ip || 
+    const ipAddress = req.ip ||
       req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
       req.connection?.remoteAddress ||
       'unknown';
@@ -231,6 +231,7 @@ export const login = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
+      domain: process.env.NODE_ENV === "production" ? ".scripthub.id" : undefined,
     };
 
     res.cookie("refreshToken", result.tokens.refreshToken, {
@@ -253,13 +254,13 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     const statusCode = error.statusCode || 500;
-    
+
     // Include additional lockout info if available
     const response = {
       error: error.name || "LoginError",
       message: error.message || "Failed to login",
     };
-    
+
     if (error.code) {
       response.code = error.code;
     }
@@ -269,7 +270,7 @@ export const login = async (req, res) => {
     if (error.remainingAttempts) {
       response.remainingAttempts = error.remainingAttempts;
     }
-    
+
     res.status(statusCode).json(response);
   }
 };
@@ -296,6 +297,7 @@ export const refresh = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
+      domain: process.env.NODE_ENV === "production" ? ".scripthub.id" : undefined,
     };
 
     res.cookie("refreshToken", result.tokens.refreshToken, {
@@ -334,9 +336,10 @@ export const logout = async (req, res) => {
       await authService.logoutUser(req.user.userId, refreshToken);
     }
 
-    // Clear cookies
-    res.clearCookie("refreshToken");
-    res.clearCookie("accessToken");
+    // Clear cookies across the shared domain
+    const clearOptions = process.env.NODE_ENV === "production" ? { domain: ".scripthub.id" } : {};
+    res.clearCookie("refreshToken", clearOptions);
+    res.clearCookie("accessToken", clearOptions);
 
     res.status(200).json({
       success: true,
@@ -366,9 +369,10 @@ export const logoutAll = async (req, res) => {
 
     await authService.logoutAllDevices(req.user.userId);
 
-    // Clear cookies
-    res.clearCookie("refreshToken");
-    res.clearCookie("accessToken");
+    // Clear cookies across the shared domain
+    const clearOptions = process.env.NODE_ENV === "production" ? { domain: ".scripthub.id" } : {};
+    res.clearCookie("refreshToken", clearOptions);
+    res.clearCookie("accessToken", clearOptions);
 
     res.status(200).json({
       success: true,
