@@ -110,7 +110,8 @@ export const generateCsrfTokenMiddleware = (req, res, next) => {
     res.cookie(CSRF_COOKIE_NAME, signedToken, {
         httpOnly: true,
         secure: config.isProduction,
-        sameSite: 'strict',
+        sameSite: config.isProduction ? 'none' : 'strict',
+        domain: config.isProduction ? '.scripthub.id' : undefined,
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
         path: '/',
     });
@@ -131,7 +132,8 @@ export const getCsrfToken = (req, res) => {
     res.cookie(CSRF_COOKIE_NAME, signedToken, {
         httpOnly: true,
         secure: config.isProduction,
-        sameSite: 'strict',
+        sameSite: config.isProduction ? 'none' : 'strict',
+        domain: config.isProduction ? '.scripthub.id' : undefined,
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
         path: '/',
     });
@@ -218,7 +220,8 @@ export const regenerateCsrfToken = (req, res, next) => {
     res.cookie(CSRF_COOKIE_NAME, signedToken, {
         httpOnly: true,
         secure: config.isProduction,
-        sameSite: 'strict',
+        sameSite: config.isProduction ? 'none' : 'strict',
+        domain: config.isProduction ? '.scripthub.id' : undefined,
         maxAge: 24 * 60 * 60 * 1000,
         path: '/',
     });

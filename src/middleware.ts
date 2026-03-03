@@ -36,8 +36,8 @@ export async function middleware(request: NextRequest) {
     }
 
     // ── Protected route guards ───────────────────────────────────────
-    // Backend sets cookies with domain=.scripthub.id so they're visible here.
-    // Users with old cookies (pre-fix) need to re-login once.
+    // Backend sets cookies with domain=.scripthub.id, sameSite=none (production)
+    // so they're visible here. Users with old cookies need to re-login once.
 
     const isStudioRoute = pathname.startsWith("/studio");
     const isAdminRoute = pathname.startsWith("/admin");
@@ -49,31 +49,32 @@ export async function middleware(request: NextRequest) {
             return NextResponse.redirect(new URL("/home", request.url));
         }
 
+        // Verify the token is valid by calling backend
         try {
             const backendUrl = envConfig.apiBaseUrl;
             const fetchUrl = backendUrl.endsWith("/api") ? `${backendUrl}/auth/me` : `${backendUrl}/api/auth/me`;
-
-            console.log(`[MIDDLEWARE] Checking admin access at ${fetchUrl}`);
 
             const res = await fetch(fetchUrl, {
                 headers: { Cookie: `accessToken=${accessToken}` },
             });
 
             if (!res.ok) {
-                console.log(`[MIDDLEWARE] Admin check failed: ${res.status} ${res.statusText}`);
+                console.log(`[MIDDLEWARE] Auth check failed: ${res.status} ${res.statusText}`);
                 return NextResponse.redirect(new URL("/home", request.url));
             }
 
-            const data = await res.json();
-            const roles: string[] = data?.data?.user?.roles || [];
-            console.log(`[MIDDLEWARE] User roles:`, roles);
+            // Admin routes require admin/moderator role
+            if (isAdminRoute) {
+                const data = await res.json();
+                const roles: string[] = data?.data?.user?.roles || [];
 
-            if (!roles.includes("admin") && !roles.includes("moderator")) {
-                console.log(`[MIDDLEWARE] Access denied: User is not admin/moderator`);
-                return NextResponse.redirect(new URL("/home", request.url));
+                if (!roles.includes("admin") && !roles.includes("moderator")) {
+                    console.log(`[MIDDLEWARE] Admin access denied: user lacks admin/moderator role`);
+                    return NextResponse.redirect(new URL("/home", request.url));
+                }
             }
         } catch (err) {
-            console.log(`[MIDDLEWARE] Admin check error:`, err);
+            console.log(`[MIDDLEWARE] Auth check error:`, err);
             return NextResponse.redirect(new URL("/home", request.url));
         }
     }
