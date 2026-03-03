@@ -55,29 +55,7 @@ function useAdblockCheck(): AdCheckState {
             }, 200);
         }));
 
-        // 2. Fetch Google AdSense — blocked = ad blocker active
-        checks.push(
-            fetch("https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js", {
-                method: "HEAD",
-                mode: "no-cors",
-                cache: "no-store",
-            })
-                .then(() => false)
-                .catch(() => true)
-        );
-
-        // 3. Fetch DoubleClick
-        checks.push(
-            fetch("https://ad.doubleclick.net/favicon.ico", {
-                method: "HEAD",
-                mode: "no-cors",
-                cache: "no-store",
-            })
-                .then(() => false)
-                .catch(() => true)
-        );
-
-        // 4. Check if our own ad script was blocked
+        // 2. Check if our own ad script was blocked
         checks.push(new Promise((resolve) => {
             const testScript = document.createElement("script");
             testScript.src = "https://pl28803011.effectivegatecpm.com/b0/c4/1c/b0c41c29f6b9de81c3a84a2e77bf5f0c.js?check=1";
@@ -174,11 +152,7 @@ function useVpnCheck(): VpnCheckState {
                     const systemTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
                     if (data.timezone && systemTz && data.timezone !== systemTz) {
                         console.warn(`[SECURITY] Timezone mismatch: system=${systemTz} vs ip=${data.timezone}`);
-                        // Some users legit have different timezones, but for GetKey we can be strict
-                        // Let's flag it as VPN to be safe, or just log it. For now, strict:
-                        sessionStorage.setItem("vpn_check", "vpn");
-                        setState("blocked");
-                        return;
+                        // Removed strict block here to reduce false positives
                     }
                 } catch (e) {
                     // Ignore timezone API errors

@@ -39,9 +39,9 @@ export async function GET(req: NextRequest) {
         });
         const ipApiData = await ipApiRes.json();
 
-        const isProxyOrHosting = ipApiData.status === "success" && (ipApiData.proxy === true || ipApiData.hosting === true);
+        const isProxy = ipApiData.status === "success" && ipApiData.proxy === true;
 
-        const isVpn = isBlackboxVpn || isProxyOrHosting;
+        const isVpn = isBlackboxVpn || isProxy;
 
         return NextResponse.json({
             isVpn,
