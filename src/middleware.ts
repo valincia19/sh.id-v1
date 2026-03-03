@@ -36,47 +36,46 @@ export async function middleware(request: NextRequest) {
     }
 
     // ── Protected route guards ───────────────────────────────────────
-    const isStudioRoute = pathname.startsWith("/studio");
+    // NOTE: /studio routes are protected CLIENT-SIDE by each page's
+    // authApi.getMe() call. We cannot check cookies here because the
+    // accessToken cookie is set by api.scripthub.id and is NOT visible
+    // to scripthub.id middleware (different subdomain).
+
     const isAdminRoute = pathname.startsWith("/admin");
 
-    if (isStudioRoute || isAdminRoute) {
+    if (isAdminRoute) {
         const accessToken = request.cookies.get("accessToken")?.value;
 
-        // No token = redirect to home immediately (before page renders)
         if (!accessToken) {
             return NextResponse.redirect(new URL("/home", request.url));
         }
 
-        // For admin routes, validate role server-side
-        if (isAdminRoute) {
-            try {
-                const backendUrl = envConfig.apiBaseUrl;
-                const fetchUrl = backendUrl.endsWith("/api") ? `${backendUrl}/auth/me` : `${backendUrl}/api/auth/me`;
+        try {
+            const backendUrl = envConfig.apiBaseUrl;
+            const fetchUrl = backendUrl.endsWith("/api") ? `${backendUrl}/auth/me` : `${backendUrl}/api/auth/me`;
 
-                console.log(`[MIDDLEWARE] Checking admin access at ${fetchUrl}`);
+            console.log(`[MIDDLEWARE] Checking admin access at ${fetchUrl}`);
 
-                const res = await fetch(fetchUrl, {
-                    headers: { Cookie: `accessToken=${accessToken}` },
-                });
+            const res = await fetch(fetchUrl, {
+                headers: { Cookie: `accessToken=${accessToken}` },
+            });
 
-                if (!res.ok) {
-                    console.log(`[MIDDLEWARE] Admin check failed: ${res.status} ${res.statusText}`);
-                    return NextResponse.redirect(new URL("/home", request.url));
-                }
-
-                const data = await res.json();
-                const roles: string[] = data?.data?.user?.roles || [];
-                console.log(`[MIDDLEWARE] User roles:`, roles);
-
-                // Only admin and moderator can access admin panel
-                if (!roles.includes("admin") && !roles.includes("moderator")) {
-                    console.log(`[MIDDLEWARE] Access denied: User is not admin/moderator`);
-                    return NextResponse.redirect(new URL("/home", request.url));
-                }
-            } catch (err) {
-                console.log(`[MIDDLEWARE] Admin check error:`, err);
+            if (!res.ok) {
+                console.log(`[MIDDLEWARE] Admin check failed: ${res.status} ${res.statusText}`);
                 return NextResponse.redirect(new URL("/home", request.url));
             }
+
+            const data = await res.json();
+            const roles: string[] = data?.data?.user?.roles || [];
+            console.log(`[MIDDLEWARE] User roles:`, roles);
+
+            if (!roles.includes("admin") && !roles.includes("moderator")) {
+                console.log(`[MIDDLEWARE] Access denied: User is not admin/moderator`);
+                return NextResponse.redirect(new URL("/home", request.url));
+            }
+        } catch (err) {
+            console.log(`[MIDDLEWARE] Admin check error:`, err);
+            return NextResponse.redirect(new URL("/home", request.url));
         }
     }
     // ─────────────────────────────────────────────────────────────────
