@@ -151,6 +151,7 @@ router.get(
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
+        domain: process.env.NODE_ENV === "production" ? ".scripthub.id" : undefined,
       };
 
       res.cookie("refreshToken", user.tokens.refreshToken, {
