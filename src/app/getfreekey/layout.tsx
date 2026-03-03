@@ -124,47 +124,30 @@ function useVpnCheck(): VpnCheckState {
     const [state, setState] = useState<VpnCheckState>("checking");
 
     useEffect(() => {
-        const cached = sessionStorage.getItem("vpn_check");
-        if (cached === "clean") { setState("passed"); return; }
-        if (cached === "vpn") { setState("blocked"); return; }
-
+        // Always do a fresh check — no sessionStorage caching
+        // This prevents stale "vpn" flags from permanently blocking users
         fetch("/api/security/check", { cache: "no-store", method: "GET" })
             .then(async (r) => {
-                // If the check API is somehow blocked or errors, we fail-closed (block)
                 if (!r.ok) {
-                    sessionStorage.setItem("vpn_check", "vpn");
-                    setState("blocked");
+                    // If API errors, fail-open (let them through)
+                    console.warn("[SECURITY] VPN check API returned non-OK, failing open");
+                    setState("passed");
                     return;
                 }
                 const data = await r.json();
 
-                // 1. Check IP reputation from server
+                // Check IP reputation from server
                 if (data.isVpn) {
-                    sessionStorage.setItem("vpn_check", "vpn");
                     setState("blocked");
                     return;
                 }
 
-                // 2. Advanced client-side check: Timezone mismatch
-                // If their system timezone drastically differs from their IP's timezone,
-                // they are likely spoofing/proxying.
-                try {
-                    const systemTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                    if (data.timezone && systemTz && data.timezone !== systemTz) {
-                        console.warn(`[SECURITY] Timezone mismatch: system=${systemTz} vs ip=${data.timezone}`);
-                        // Removed strict block here to reduce false positives
-                    }
-                } catch (e) {
-                    // Ignore timezone API errors
-                }
-
-                sessionStorage.setItem("vpn_check", "clean");
                 setState("passed");
             })
-            .catch(() => {
-                // If fetch completely fails (e.g. adblocker blocked our own API), block them
-                sessionStorage.setItem("vpn_check", "vpn");
-                setState("blocked");
+            .catch((err) => {
+                // If fetch completely fails, fail-open (don't block legit users)
+                console.warn("[SECURITY] VPN check fetch failed, failing open:", err);
+                setState("passed");
             });
     }, []);
 
