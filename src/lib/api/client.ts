@@ -78,17 +78,57 @@ apiClient.interceptors.request.use(
 // Response Interceptor (Global Error Handling ONLY)
 // ============================================
 
+let isRefreshing = false;
+let refreshSubscribers: Array<() => void> = [];
+
+const onRefreshed = () => {
+  refreshSubscribers.forEach((cb) => cb());
+  refreshSubscribers = [];
+};
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    // If we receive a 401, the user is unauthenticated.
-    // We optionally dispatch an event to log the user out of the UI
-    if (error.response?.status === 401) {
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event('auth-unauthorized'));
+    const originalRequest = error.config as any;
+
+    // Auto-refresh on 401: try to refresh token once, then retry
+    if (error.response?.status === 401 && !originalRequest?._retry) {
+      // Skip refresh for the refresh endpoint itself to avoid infinite loop
+      if (originalRequest?.url?.includes('/auth/refresh')) {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event('auth-unauthorized'));
+        }
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        // Queue this request until refresh completes
+        return new Promise((resolve) => {
+          refreshSubscribers.push(() => {
+            resolve(apiClient.request(originalRequest));
+          });
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        // Call refresh endpoint — backend will issue new cookies with domain=.scripthub.id
+        await axios.post(`${API_BASE_URL}/auth/refresh`, {}, { withCredentials: true });
+        isRefreshing = false;
+        onRefreshed();
+        return apiClient.request(originalRequest);
+      } catch {
+        isRefreshing = false;
+        refreshSubscribers = [];
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event('auth-unauthorized'));
+        }
+        return Promise.reject(error);
       }
     }
-    
+
     // If CSRF token is invalid/expired, fetch a new one and retry once
     if (error.response?.status === 403) {
       const data = error.response?.data as { code?: string };
@@ -106,7 +146,7 @@ apiClient.interceptors.response.use(
         }
       }
     }
-    
+
     return Promise.reject(error);
   }
 );
