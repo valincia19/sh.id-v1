@@ -87,7 +87,13 @@ app.use("/api", writeLimiter);
 // ============================================
 // Logging Middleware
 // ============================================
-app.use(morgan(config.isDevelopment ? "dev" : "combined", { stream }));
+app.use(morgan(config.isDevelopment ? "dev" : "combined", {
+  stream,
+  skip: function (req, res) {
+    // Skip logging successful requests (2xx, 3xx) in non-development to reduce noise
+    return !config.isDevelopment && res.statusCode < 400;
+  }
+}));
 
 // ============================================
 // Passport Initialization
