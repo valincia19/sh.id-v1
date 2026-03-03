@@ -336,10 +336,13 @@ export const logout = async (req, res) => {
       await authService.logoutUser(req.user.userId, refreshToken);
     }
 
-    // Clear cookies across the shared domain
-    const clearOptions = process.env.NODE_ENV === "production" ? { domain: ".scripthub.id" } : {};
-    res.clearCookie("refreshToken", clearOptions);
-    res.clearCookie("accessToken", clearOptions);
+    // Clear cookies for BOTH old domain (implicit api.scripthub.id) and new shared domain
+    res.clearCookie("refreshToken");
+    res.clearCookie("accessToken");
+    if (process.env.NODE_ENV === "production") {
+      res.clearCookie("refreshToken", { domain: ".scripthub.id" });
+      res.clearCookie("accessToken", { domain: ".scripthub.id" });
+    }
 
     res.status(200).json({
       success: true,
@@ -369,10 +372,13 @@ export const logoutAll = async (req, res) => {
 
     await authService.logoutAllDevices(req.user.userId);
 
-    // Clear cookies across the shared domain
-    const clearOptions = process.env.NODE_ENV === "production" ? { domain: ".scripthub.id" } : {};
-    res.clearCookie("refreshToken", clearOptions);
-    res.clearCookie("accessToken", clearOptions);
+    // Clear cookies for BOTH old domain (implicit api.scripthub.id) and new shared domain
+    res.clearCookie("refreshToken");
+    res.clearCookie("accessToken");
+    if (process.env.NODE_ENV === "production") {
+      res.clearCookie("refreshToken", { domain: ".scripthub.id" });
+      res.clearCookie("accessToken", { domain: ".scripthub.id" });
+    }
 
     res.status(200).json({
       success: true,
