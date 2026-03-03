@@ -36,14 +36,13 @@ export async function middleware(request: NextRequest) {
     }
 
     // ── Protected route guards ───────────────────────────────────────
-    // NOTE: /studio routes are protected CLIENT-SIDE by each page's
-    // authApi.getMe() call. We cannot check cookies here because the
-    // accessToken cookie is set by api.scripthub.id and is NOT visible
-    // to scripthub.id middleware (different subdomain).
+    // Backend sets cookies with domain=.scripthub.id so they're visible here.
+    // Users with old cookies (pre-fix) need to re-login once.
 
+    const isStudioRoute = pathname.startsWith("/studio");
     const isAdminRoute = pathname.startsWith("/admin");
 
-    if (isAdminRoute) {
+    if (isStudioRoute || isAdminRoute) {
         const accessToken = request.cookies.get("accessToken")?.value;
 
         if (!accessToken) {
