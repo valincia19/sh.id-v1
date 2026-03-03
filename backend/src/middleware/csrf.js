@@ -127,6 +127,20 @@ export const generateCsrfTokenMiddleware = (req, res, next) => {
  * GET /api/csrf-token
  */
 export const getCsrfToken = (req, res) => {
+    // Prevent caching for this endpoint
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+
+    // Check if client already has a valid token
+    const existingCookie = req.cookies?.[CSRF_COOKIE_NAME];
+    if (existingCookie && verifyCsrfToken(existingCookie)) {
+        return res.json({
+            success: true,
+            data: {
+                csrfToken: existingCookie,
+            },
+        });
+    }
+
     const { signedToken } = generateCsrfToken();
 
     res.cookie(CSRF_COOKIE_NAME, signedToken, {
