@@ -81,6 +81,7 @@ export const updateScriptValidation = [
     body("hasKeySystem").optional().toBoolean(),
     body("keySystemUrl").optional({ checkFalsy: true }).trim().isLength({ max: 2000 }).withMessage("Key System URL is too long"),
     body("youtubeUrl").optional({ checkFalsy: true }).trim().isURL().withMessage("Invalid YouTube URL"),
+    body("status").optional({ checkFalsy: true }).trim().isIn(["draft", "published", "unlisted", "archived", "hidden"]).withMessage("Invalid status"),
 ];
 
 /**
@@ -277,7 +278,7 @@ export const updateScript = async (req, res) => {
         // 4. Handle Game
         const {
             title, description, loaderUrl, gamePlatformId, tags, hubId,
-            isPaid, purchaseUrl, hasKeySystem, keySystemUrl, youtubeUrl
+            isPaid, purchaseUrl, hasKeySystem, keySystemUrl, youtubeUrl, status
         } = req.body;
         let gameId = undefined;
         if (gamePlatformId) {
@@ -336,6 +337,7 @@ export const updateScript = async (req, res) => {
             hasKeySystem: hasKeySystem !== undefined ? (hasKeySystem === true || hasKeySystem === 'true') : undefined,
             keySystemUrl: parseEmpty(keySystemUrl),
             youtubeUrl: parseEmpty(youtubeUrl),
+            status: parseEmpty(status),
         });
 
         // 6. Handle Tags
