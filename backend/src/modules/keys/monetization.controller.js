@@ -1,4 +1,5 @@
 import * as monetizationService from "./monetization.service.js";
+import { checkIpScore } from "./ipScore.service.js";
 import logger from "../../utils/logger.js";
 import config from "../../config/index.js";
 
@@ -7,14 +8,28 @@ import config from "../../config/index.js";
 // ============================================
 
 /**
- * Extract the real client IP, handling Cloudflare/proxy headers.
+ * Extract the real client IP from the Cloudflare → Nginx → Express chain.
+ *
+ * Priority:
+ * 1. CF-Connecting-IP (set by Cloudflare, cannot be spoofed by end users)
+ * 2. X-Real-IP (set by our Nginx config)
+ * 3. X-Forwarded-For first entry (standard proxy header)
+ * 4. req.ip (Express parsed, depends on trust proxy setting)
+ *
+ * IPv6 handling: Strip ::ffff: prefix for mapped IPv4 addresses
  */
 const getClientIp = (req) => {
-    return req.headers["cf-connecting-ip"]
+    let ip = req.headers["cf-connecting-ip"]
         || req.headers["x-real-ip"]
+        || (req.headers["x-forwarded-for"] || "").split(",")[0].trim()
         || req.ip
         || req.socket.remoteAddress
         || "0.0.0.0";
+
+    // Normalize IPv4-mapped IPv6 addresses (::ffff:1.2.3.4 → 1.2.3.4)
+    if (ip.startsWith("::ffff:")) ip = ip.substring(7);
+
+    return ip;
 };
 
 /**
@@ -56,13 +71,26 @@ export const startSession = async (req, res) => {
         const clientIp = getClientIp(req);
         const userAgent = req.headers["user-agent"] || "";
 
+        // Score-based IP reputation check (Redis-cached, fail-open)
+        const ipCheck = await checkIpScore(clientIp, req.headers);
+        if (ipCheck.blocked) {
+            logger.warn(`[MONETIZATION] IP blocked: ${clientIp} score=${ipCheck.score}`);
+            return res.status(403).json({
+                success: false,
+                message: "Access denied. VPN, proxy, or suspicious connection detected.",
+                code: "IP_BLOCKED",
+            });
+        }
+
         const result = await monetizationService.startSession(scriptSlug, provider, clientIp, userAgent);
 
-        // Set session cookie (HttpOnly, SameSite=Lax for redirect-back from providers)
+        // Set session cookie — domain=.scripthub.id for cross-subdomain access
+        // sameSite=none + secure for cross-origin cookie sending from getfreekey subdomain
         res.cookie("monetization_session", `${result.sessionId}.${result.signature}`, {
             httpOnly: true,
             secure: config.isProduction,
-            sameSite: "lax",
+            sameSite: config.isProduction ? "none" : "lax",
+            domain: config.isProduction ? ".scripthub.id" : undefined,
             maxAge: 60 * 60 * 1000, // 1 hour
             path: "/",
         });
@@ -126,7 +154,7 @@ export const callbackWorkink = async (req, res) => {
             sessionId, signature, clientIp, userAgent, workinkToken
         );
 
-        res.clearCookie("monetization_session", { path: "/" });
+        res.clearCookie("monetization_session", { path: "/", domain: config.isProduction ? ".scripthub.id" : undefined });
 
         // Redirect to frontend success page
         const frontendUrl = config.getkeyUrl;
@@ -162,7 +190,7 @@ export const callbackLinkvertise = async (req, res) => {
             sessionId, signature, clientIp, userAgent
         );
 
-        res.clearCookie("monetization_session", { path: "/" });
+        res.clearCookie("monetization_session", { path: "/", domain: config.isProduction ? ".scripthub.id" : undefined });
 
         const frontendUrl = config.getkeyUrl;
         res.redirect(`${frontendUrl}/success?key=${encodeURIComponent(result.key)}&expires=${encodeURIComponent(result.expiresAt)}&slug=${encodeURIComponent(result.slug)}`);
@@ -195,7 +223,7 @@ export const callbackOfficial = async (req, res) => {
             sessionId, signature, clientIp, userAgent
         );
 
-        res.clearCookie("monetization_session", { path: "/" });
+        res.clearCookie("monetization_session", { path: "/", domain: config.isProduction ? ".scripthub.id" : undefined });
 
         res.json({
             success: true,
@@ -306,7 +334,7 @@ export const officialComplete = async (req, res) => {
         );
 
         // Clear session cookie after successful key generation
-        res.clearCookie("monetization_session", { path: "/" });
+        res.clearCookie("monetization_session", { path: "/", domain: config.isProduction ? ".scripthub.id" : undefined });
 
         res.json({
             success: true,

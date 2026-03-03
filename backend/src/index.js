@@ -24,9 +24,10 @@ const app = express();
 // ============================================
 // Proxy Configuration
 // ============================================
-// Secure proxy trust: trust local loopback (Nginx) rather than blindly trusting
-// all 'X-Forwarded-For' headers which can be spoofed by attackers to bypass rate limits.
-app.set("trust proxy", "loopback, linklocal, uniquelocal");
+// Secure proxy trust: trust exactly 1 hop (Nginx).
+// CF-Connecting-IP is read directly by getClientIp(), so Express only needs
+// to handle the Nginx → Express hop for req.ip to work correctly.
+app.set("trust proxy", 1);
 
 // ============================================
 // Security Middleware

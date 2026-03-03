@@ -27,11 +27,15 @@ const createLimiter = (options) => {
             });
         },
         keyGenerator: (req) => {
-            // Use Cloudflare real IP if available
-            return req.headers["cf-connecting-ip"]
+            // Use same IP extraction as getClientIp() in monetization.controller.js
+            let ip = req.headers["cf-connecting-ip"]
                 || req.headers["x-real-ip"]
+                || (req.headers["x-forwarded-for"] || "").split(",")[0].trim()
                 || req.ip
-                || req.socket.remoteAddress;
+                || req.socket.remoteAddress
+                || "0.0.0.0";
+            if (ip.startsWith("::ffff:")) ip = ip.substring(7);
+            return ip;
         },
     };
 
