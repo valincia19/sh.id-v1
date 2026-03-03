@@ -129,12 +129,15 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // If CSRF token is invalid/expired, fetch a new one and retry once
-    if (error.response?.status === 403) {
+    // If CSRF token is invalid/expired, fetch a new one and retry ONCE
+    if (error.response?.status === 403 && !originalRequest?._csrfRetry) {
       const data = error.response?.data as { code?: string };
       if (data?.code?.startsWith('CSRF_')) {
+        originalRequest._csrfRetry = true;
         try {
           await fetchCsrfToken();
+          // Small delay to let browser apply the Set-Cookie from csrf-token endpoint
+          await new Promise(resolve => setTimeout(resolve, 100));
           // Retry the original request once
           const config = error.config;
           if (config && config.headers) {
