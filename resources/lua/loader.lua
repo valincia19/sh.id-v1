@@ -66,10 +66,12 @@ local function Create(class, props)
 end
 
 -- =================================================================
--- HWID Detection
+-- HWID Detection & Executor Info
 -- =================================================================
-local function GetHWID()
+local function GetSystemInfo()
     local hwid = nil
+    local executor = nil
+
     pcall(function()
         if gethwid then
             hwid = gethwid()
@@ -77,7 +79,18 @@ local function GetHWID()
             hwid = game:GetService("RbxAnalyticsService"):GetClientId()
         end
     end)
-    return hwid
+    
+    pcall(function()
+        if identify then
+            executor = identify()
+        elseif getexecutorname then
+            executor = getexecutorname()
+        else
+            executor = "Unknown Executor"
+        end
+    end)
+    
+    return hwid, executor
 end
 
 -- =================================================================
@@ -109,16 +122,16 @@ local function ValidateKey(keyValue)
         return false, "ScriptID is not configured."
     end
 
-    local payload = {
-        key      = keyValue,
-        scriptId = Config.ScriptID,
-    }
+    local hwid, executor = GetSystemInfo()
 
-    -- Attach HWID if available
-    local hwid = GetHWID()
-    if hwid then
-        payload.hwid = hwid
-    end
+    local payload = {
+        key            = keyValue,
+        scriptId       = Config.ScriptID,
+        hwid           = hwid or "Unknown",
+        executor       = executor or "Unknown",
+        robloxUsername = Player.Name,
+        robloxUserId   = Player.UserId
+    }
 
     local ok, response = pcall(function()
         return DoRequest(
@@ -170,6 +183,9 @@ local function LoadScript()
     end
 
     task.spawn(function()
+        -- Inject runtime token so Tsunami Free.lua allows execution
+        _G.VinzHub_LoaderToken = "VH_" .. tostring(HttpService:GenerateGUID(false))
+        
         local execOk, execErr = pcall(fn)
         if not execOk then
             warn("[ScriptHub] Runtime error: " .. tostring(execErr))
@@ -524,8 +540,10 @@ end
 -- =================================================================
 -- Entry Point
 -- =================================================================
-if _G.ScriptHubKey and type(_G.ScriptHubKey) == "string" and #_G.ScriptHubKey > 0 then
-    local valid, msg = ValidateKey(_G.ScriptHubKey)
+local autoKey = script_key or _G.script_key or _G.ScriptHubKey
+
+if autoKey and type(autoKey) == "string" and #autoKey > 0 then
+    local valid, msg = ValidateKey(autoKey)
     if valid then
         LoadScript()
     else

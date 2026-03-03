@@ -2,13 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
     try {
-        const ip = req.headers.get("cf-connecting-ip") ||
+        // More robust IP extraction (preferring CF-Connecting-IP if behind Cloudflare)
+        let ip = req.headers.get("cf-connecting-ip") ||
             req.headers.get("x-real-ip") ||
-            req.headers.get("x-forwarded-for")?.split(',')[0].trim() ||
             "127.0.0.1";
 
-        // Localhost bypass
-        if (ip === "127.0.0.1" || ip === "::1" || ip.startsWith("192.168.") || ip.startsWith("10.")) {
+        // If not found, try to parse x-forwarded-for
+        if (ip === "127.0.0.1") {
+            const forwarded = req.headers.get("x-forwarded-for");
+            if (forwarded) {
+                // x-forwarded-for can be a comma separated list, the first one is the real client IP
+                ip = forwarded.split(',')[0].trim();
+            }
+        }
+
+        console.log(`[SECURITY] IP Check Requested for: ${ip} | Headers: CF=${req.headers.get("cf-connecting-ip")} | X-Real=${req.headers.get("x-real-ip")} | X-Forwarded=${req.headers.get("x-forwarded-for")}`);
+
+        // Localhost / Docker internal bypass
+        if (ip === "127.0.0.1" || ip === "::1" || ip.startsWith("192.168.") || ip.startsWith("10.") || ip.startsWith("172.")) {
+            console.log(`[SECURITY] Bypassing VPN check for local/internal IP: ${ip}`);
             return NextResponse.json({ isVpn: false, ip });
         }
 
