@@ -1,9 +1,20 @@
+/**
+ * OpenAPI Configuration
+ * 
+ * Re-uses the backend's configuration since both services share the same
+ * .env file via docker-compose. This eliminates config duplication and
+ * ensures both services always use the same credentials.
+ * 
+ * The backend .env is injected via docker-compose env_file directive.
+ */
 import dotenv from 'dotenv';
 
 // Load environment variables
 dotenv.config();
 
-// 1. Enforce NODE_ENV explicitly
+// ============================================
+// Helpers (same as backend)
+// ============================================
 const validEnvs = ['development', 'production', 'test'];
 if (!process.env.NODE_ENV || !validEnvs.includes(process.env.NODE_ENV)) {
   throw new Error("CRITICAL: NODE_ENV must be explicitly set to 'development', 'production', or 'test'. Server refusing to start.");
@@ -14,7 +25,6 @@ const isDevelopment = env === 'development';
 const isProduction = env === 'production';
 const isTest = env === 'test';
 
-// 2. Fail-Fast Helper
 const requireEnv = (key, type = 'string') => {
   const value = process.env[key];
   if (!value) {
@@ -43,7 +53,9 @@ const optionalEnv = (key, defaultValue = undefined, type = 'string') => {
   return value;
 };
 
-// 3. CORS Split (Strict Separation)
+// ============================================
+// CORS (same logic as backend)
+// ============================================
 let corsOrigins = [];
 if (isProduction) {
   if (!process.env.CORS_ORIGINS) {
@@ -60,22 +72,27 @@ if (isProduction) {
   corsOrigins = ['http://localhost:3000', 'http://localhost:3001', 'http://getfreekey.localhost:3000'];
 }
 
+// ============================================
+// Unified Config (mirrors backend/src/config/index.js)
+// ============================================
 const config = {
   // Environment
   env,
+  nodeEnv: env, // alias for backward compat
   isDevelopment,
   isProduction,
   isTest,
 
-  // Server
-  port: requireEnv('API_PORT', 'number'),
+  // Server — OpenAPI always runs on 4001
+  port: 4001,
   apiUrl: requireEnv('API_URL'),
 
   // Frontend
   frontendUrl: requireEnv('FRONTEND_URL'),
   appUrl: requireEnv('APP_URL'),
+  getkeyUrl: optionalEnv('GETFREEKEY_URL', ''),
 
-  // Database
+  // Database (shared with backend)
   database: {
     host: requireEnv('POSTGRES_HOST'),
     port: requireEnv('POSTGRES_PORT', 'number'),
@@ -89,7 +106,7 @@ const config = {
     connectionTimeoutMillis: optionalEnv('DB_CONN_TIMEOUT', 3000, 'number'),
   },
 
-  // Redis
+  // Redis (shared with backend)
   redis: {
     host: requireEnv('REDIS_HOST'),
     port: requireEnv('REDIS_PORT', 'number'),
@@ -100,7 +117,7 @@ const config = {
     enableOfflineQueue: false,
   },
 
-  // JWT
+  // JWT (shared with backend)
   jwt: {
     secret: requireEnv('JWT_SECRET'),
     expiresIn: requireEnv('JWT_EXPIRES_IN'),
@@ -133,14 +150,14 @@ const config = {
     replyTo: requireEnv('EMAIL_REPLY_TO'),
   },
 
-  // Security
+  // Security (shared with backend)
   security: {
     bcryptRounds: requireEnv('BCRYPT_ROUNDS', 'number'),
     sessionSecret: requireEnv('SESSION_SECRET'),
     corsOrigins,
   },
 
-  // Rate Limiting
+  // Rate Limiting (shared with backend)
   rateLimit: {
     windowMs: requireEnv('RATE_LIMIT_WINDOW', 'number') * 60 * 1000,
     max: requireEnv('RATE_LIMIT_MAX', 'number'),
@@ -154,12 +171,14 @@ const config = {
     },
   },
 
-  // S3 Storage
+  // S3 Storage (shared with backend)
   s3: {
     endpoint: requireEnv('S3_ENDPOINT'),
     accessKeyId: requireEnv('S3_ACCESS_KEY'),
     secretAccessKey: requireEnv('S3_SECRET_KEY'),
-    bucket: requireEnv('S3_BUCKET_NAME'),
+    bucket: optionalEnv('S3_BUCKET_NAME', ''),
+    bucketImages: optionalEnv('S3_BUCKET_IMAGES', ''),
+    bucketScripts: optionalEnv('S3_BUCKET_SCRIPTS', ''),
     region: requireEnv('S3_REGION'),
   },
 
@@ -183,9 +202,9 @@ const config = {
 
   // Feature Flags
   features: {
-    emailVerification: optionalEnv('ENABLE_EMAIL_VERIFICATION', 'false', 'boolean'),
-    discordLogin: optionalEnv('ENABLE_DISCORD_LOGIN', 'false', 'boolean'),
-    registration: optionalEnv('ENABLE_REGISTRATION', 'false', 'boolean'),
+    emailVerification: optionalEnv('ENABLE_EMAIL_VERIFICATION', false, 'boolean'),
+    discordLogin: optionalEnv('ENABLE_DISCORD_LOGIN', false, 'boolean'),
+    registration: optionalEnv('ENABLE_REGISTRATION', false, 'boolean'),
   },
 
   // Session
@@ -197,7 +216,7 @@ const config = {
     cookie: {
       secure: isProduction,
       httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: 24 * 60 * 60 * 1000,
       sameSite: isProduction ? 'strict' : 'lax',
     },
   },
