@@ -28,6 +28,37 @@ function AdsterraInjector() {
     return null;
 }
 
+// ─── Linkvertise Injector ────────────────────────────────────────
+function LinkvertiseInjector() {
+    useEffect(() => {
+        const scriptId = "linkvertise-sdk";
+        if (document.getElementById(scriptId)) return;
+
+        // Load Linkvertise SDK
+        const sdk = document.createElement("script");
+        sdk.id = scriptId;
+        sdk.src = "https://publisher.linkvertise.com/cdn/linkvertise.js";
+        sdk.async = true;
+        sdk.onload = () => {
+            // Initialize Linkvertise full-page monetization
+            const initScript = document.createElement("script");
+            initScript.id = "linkvertise-init";
+            initScript.textContent = `linkvertise(3869838, {whitelist: [], blacklist: [""]});`;
+            document.body.appendChild(initScript);
+        };
+        document.body.appendChild(sdk);
+
+        return () => {
+            const el = document.getElementById(scriptId);
+            if (el) el.remove();
+            const init = document.getElementById("linkvertise-init");
+            if (init) init.remove();
+        };
+    }, []);
+
+    return null;
+}
+
 // ─── AdBlock Detection (2-of-3 Voting) ──────────────────────────
 // Only blocks if 2+ of 3 independent checks detect an ad blocker.
 // This prevents false positives from Brave shields, DNS filters, etc.
@@ -139,6 +170,7 @@ export default function GetKeyLayout({ children }: { children: React.ReactNode }
             {adCheck === "passed" && (
                 <>
                     <AdsterraInjector />
+                    <LinkvertiseInjector />
                     {children}
                 </>
             )}
