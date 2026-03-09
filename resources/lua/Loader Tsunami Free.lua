@@ -15,7 +15,7 @@ local Config = {
     LoadURL     = "https://api.scripthub.id/v1/5a01134e2c4779b1a90fd5261126d08e.lua",                      -- URL of the script to execute after validation
 
     -- [ Get Key & Socials ] --
-    GetKeyLink  = "https://getkey.scripthub.id/vinzhub",                      -- e.g. "https://getkey.scripthub.id/your-slug"
+    GetKeyLink  = "https://scripthub.id/s/eb8f66b4ba2cb23e",                      -- e.g. "https://getkey.scripthub.id/your-slug"
     DiscordLink = "https://discord.gg/vinzhub",
 
     -- [ UI Theming (Zinc Palette) ] --

@@ -218,13 +218,12 @@ export async function serveDeployment(req, res) {
             return res.status(404).send("Deployment not found or inactive.");
         }
 
-        // Detect if the request is from a browser or common development HTTP client
-        const ua = (req.headers["user-agent"] || "").toLowerCase();
-        const isBrowser = ua.includes("mozilla") || ua.includes("chrome") || ua.includes("safari") ||
-            ua.includes("firefox") || ua.includes("edge") || ua.includes("opera") ||
-            ua.includes("msie") || ua.includes("trident");
+        // Detect if the request is explicitly requesting HTML (most browsers)
+        const accept = (req.headers["accept"] || "").toLowerCase();
+        const isBrowser = accept.includes("text/html");
 
         // Blacklist common headless HTTP clients to force "Executor Only" strict behavior
+        const ua = (req.headers["user-agent"] || "").toLowerCase();
         const isHttpClient = ua.includes("curl") || ua.includes("postman") || ua.includes("insomnia") ||
             ua.includes("httpie") || ua.includes("wget") || ua.includes("python-requests") ||
             ua.includes("node-fetch") || ua.includes("go-http-client") || ua.includes("axios") ||
