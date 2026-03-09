@@ -44,3 +44,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDE/Editor folders
+.qoder/
+
+# Empty folders
+scripthub-obfuscator/
+scripthub-worker-api/
