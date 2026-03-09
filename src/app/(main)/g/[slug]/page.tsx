@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
         if (!game) return {};
 
-        const title = `${game.name} Scripts | ScriptHub`;
+        const title = `${game.name} Scripts`;
         const description = game.description
             ? game.description.substring(0, 160)
             : `Find the best working Roblox scripts for ${game.name} on ScriptHub. Get instant access to auto farms, aimbots, ESPs, and more for ${game.name}.`;
@@ -56,7 +56,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         };
     } catch {
         return {
-            title: `Game Scripts | ScriptHub`,
+            title: `Game Scripts`,
         };
     }
 }

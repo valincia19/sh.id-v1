@@ -9,6 +9,7 @@ import { hubsApi, Hub } from "@/lib/api/hubs";
 import { scriptsApi, Script } from "@/lib/api/scripts";
 import { getStorageUrl } from "@/lib/utils/image";
 import { formatRelativeTime } from "@/lib/utils/date";
+import { Share2 } from "lucide-react";
 
 const SCRIPTS_PER_PAGE = 30;
 
@@ -27,6 +28,25 @@ export default function HubDetailPage() {
   const [totalScripts, setTotalScripts] = useState(0);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  const handleShare = async () => {
+    const shareData = {
+      title: `${hub?.name} on ScriptHub`,
+      text: hub?.description || `Check out ${hub?.name} on ScriptHub!`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        alert("Link copied to clipboard!");
+      }
+    } catch (err) {
+      console.error("Error sharing:", err);
+    }
+  };
 
   useEffect(() => {
     const fetchHubDetail = async () => {
@@ -280,9 +300,23 @@ export default function HubDetailPage() {
                   </div>
 
                   {/* Actions - Mobile Only visible here */}
-                  <div className="md:hidden">
-                    <button className="h-9 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition-all shadow-lg active:scale-95">
-                      Join
+                  <div className="md:hidden flex items-center gap-2">
+                    {hub.discordServer && (
+                      <a
+                        href={hub.discordServer}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center h-9 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition-all shadow-lg active:scale-95 flex-1"
+                      >
+                        Join Discord
+                      </a>
+                    )}
+                    <button
+                      onClick={handleShare}
+                      className="p-2.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-white hover:bg-white/[0.08] transition-all active:scale-95"
+                      aria-label="Share Hub"
+                    >
+                      <Share2 size={16} />
                     </button>
                   </div>
                 </div>
@@ -306,24 +340,27 @@ export default function HubDetailPage() {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /></svg>
                     <span>{totalScripts} Scripts</span>
                   </div>
-                  {hub.discordServer && (
-                    <a
-                      href={hub.discordServer}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 transition-colors"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" y1="9" x2="9.01" y2="9" /><line x1="15" y1="9" x2="15.01" y2="9" /></svg>
-                      <span>Discord Server</span>
-                    </a>
-                  )}
                 </div>
               </div>
 
               {/* Actions - Desktop Only */}
               <div className="hidden md:flex items-center gap-3 shrink-0">
-                <button className="h-10 px-8 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-bold transition-all shadow-lg hover:translate-y-[-1px] active:translate-y-[0px]">
-                  Join Hub
+                {hub.discordServer && (
+                  <a
+                    href={hub.discordServer}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center h-10 px-8 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-bold transition-all shadow-lg hover:translate-y-[-1px] active:translate-y-[0px]"
+                  >
+                    Join Discord
+                  </a>
+                )}
+                <button
+                  onClick={handleShare}
+                  className="flex items-center gap-2 h-10 px-4 rounded-lg bg-white/[0.04] border border-white/[0.08] text-sm font-medium text-offgray-300 hover:bg-white/[0.08] hover:text-white transition-colors"
+                >
+                  <Share2 size={16} />
+                  <span>Share</span>
                 </button>
               </div>
             </div>

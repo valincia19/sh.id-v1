@@ -4,8 +4,8 @@ import type { Metadata } from 'next';
 const SITE_URL = 'https://scripthub.id';
 
 export const metadata: Metadata = {
-  title: 'ScriptHub – Platform Script Terpercaya',
-  description: 'Platform terbaik untuk menemukan dan menggunakan script berkualitas dengan update cepat dan aman. The open platform for Lua script creators.',
+  title: 'ScriptHub - The Script Ecosystem for Roblox Developers',
+  description: 'The premier platform for Lua script creators. Securely distribute, monetize, and manage your scripts with our purpose-built infrastructure.',
   alternates: {
     canonical: SITE_URL,
   },
@@ -21,26 +21,26 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: 'ScriptHub – Platform Script Terpercaya',
-    description: 'Platform terbaik untuk menemukan dan menggunakan script berkualitas dengan update cepat dan aman.',
+    title: 'ScriptHub - The Script Ecosystem',
+    description: 'Publish, protect, and monetize your Roblox scripts with ScriptHub. High-speed CDN, HWID locking, and advanced analytics.',
     url: SITE_URL,
     type: 'website',
     images: [{
       url: `${SITE_URL}/og-default.png`,
       width: 1200,
       height: 630,
-      alt: 'ScriptHub — The Script Ecosystem',
+      alt: 'ScriptHub - The Script Ecosystem',
     }],
     siteName: 'ScriptHub',
-    locale: 'id_ID',
+    locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ScriptHub – Platform Script Terpercaya',
-    description: 'Platform terbaik untuk menemukan dan menggunakan script berkualitas dengan update cepat dan aman.',
+    title: 'ScriptHub - The Script Ecosystem',
+    description: 'The professional choice for Roblox script distribution and monetization.',
     images: [{
       url: `${SITE_URL}/og-default.png`,
-      alt: 'ScriptHub — The Script Ecosystem',
+      alt: 'ScriptHub - The Script Ecosystem',
     }],
   },
 };

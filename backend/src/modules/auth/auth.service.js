@@ -109,6 +109,20 @@ export const registerUser = async (userData) => {
         [uuidv4(), userId, userId]
       );
 
+      // Create default free plan (30-day trial)
+      await client.query(
+        `INSERT INTO user_plans (user_id, plan_type, started_at, expires_at)
+         VALUES ($1, 'free', NOW(), NOW() + INTERVAL '30 days')`,
+        [userId]
+      );
+
+      // Create default maximums for free plan
+      await client.query(
+        `INSERT INTO user_maximums (user_id, maximum_obfuscation, maximum_keys, maximum_deployments, maximum_devices_per_key)
+         VALUES ($1, 3, 10, 50, 1)`,
+        [userId]
+      );
+
       return {
         user: {
           id: user.id,
@@ -472,6 +486,16 @@ export const getUserById = async (userId) => {
       [userId]
     );
 
+    // Load auth providers
+    const providersResult = await query(
+      `
+      SELECT provider
+      FROM auth_providers
+      WHERE user_id = $1
+      `,
+      [userId]
+    );
+
     return {
       id: user.id,
       username: user.username,
@@ -482,6 +506,7 @@ export const getUserById = async (userId) => {
       accountStatus: user.account_status,
       emailVerified: user.email_verified,
       roles: rolesResult.rows.map((row) => row.name),
+      providers: providersResult.rows.map((row) => row.provider),
       createdAt: user.created_at,
       updatedAt: user.updated_at,
     };

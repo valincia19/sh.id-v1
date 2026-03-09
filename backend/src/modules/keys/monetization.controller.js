@@ -169,14 +169,73 @@ export const callbackWorkink = async (req, res) => {
 };
 
 /**
+ * Detect if the request is from a bot/crawler (Discord, Telegram, Twitter, Facebook, etc.)
+ * so we can serve OG-rich HTML instead of a redirect.
+ */
+const isBotCrawler = (userAgent) => {
+    const bots = [
+        "Discordbot", "TelegramBot", "Twitterbot", "facebookexternalhit",
+        "LinkedInBot", "Slackbot", "WhatsApp", "Googlebot", "bingbot",
+        "Embedly", "Iframely", "MetaInspector", "Applebot"
+    ];
+    return bots.some(bot => userAgent.toLowerCase().includes(bot.toLowerCase()));
+};
+
+/**
+ * Serve a branded Open Graph HTML page for bot crawlers.
+ */
+const serveOgPage = (res) => {
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScriptHub – Get Your Free Key</title>
+    <meta name="description" content="Complete the verification to receive your free script license key from ScriptHub.">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="ScriptHub">
+    <meta property="og:title" content="ScriptHub – Get Your Free Key">
+    <meta property="og:description" content="Complete the verification to get your free license key. Powered by ScriptHub – the trusted script distribution platform.">
+    <meta property="og:url" content="https://api.scripthub.id/api/keys/public/callback/linkvertise">
+    <meta property="og:image" content="https://scripthub.id/og-default.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="ScriptHub – Get Your Free Key">
+    <meta name="twitter:description" content="Complete the verification to get your free license key. Powered by ScriptHub.">
+    <meta name="twitter:image" content="https://scripthub.id/og-default.png">
+    <!-- Theme -->
+    <meta name="theme-color" content="#10b981">
+</head>
+<body style="background:#09090b;color:#fafafa;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0">
+    <div style="text-align:center;max-width:420px;padding:2rem">
+        <h1 style="font-size:1.5rem;margin-bottom:.5rem">ScriptHub</h1>
+        <p style="color:#a1a1aa;font-size:.875rem">Complete the verification to receive your free license key.</p>
+    </div>
+</body>
+</html>`;
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    return res.status(200).send(html);
+};
+
+/**
  * Linkvertise callback handler.
  * GET /api/keys/public/callback/linkvertise
  *
  * Linkvertise redirects the user to the target URL after completion.
  * We validate our HMAC session from the cookie.
+ * Bot crawlers receive an OG-enriched HTML page instead.
  */
 export const callbackLinkvertise = async (req, res) => {
     try {
+        // Serve OG page for bot crawlers
+        const userAgent = req.headers["user-agent"] || "";
+        if (isBotCrawler(userAgent)) {
+            return serveOgPage(res);
+        }
+
         const { sessionId, signature } = parseSessionToken(req);
 
         if (!sessionId || !signature) {
@@ -184,7 +243,6 @@ export const callbackLinkvertise = async (req, res) => {
         }
 
         const clientIp = getClientIp(req);
-        const userAgent = req.headers["user-agent"] || "";
 
         const result = await monetizationService.validateCallback(
             sessionId, signature, clientIp, userAgent

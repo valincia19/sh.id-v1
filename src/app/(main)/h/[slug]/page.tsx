@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!hub) return {};
 
   const rawName = hub.name || 'Hub';
-  const title = `${rawName} | ScriptHub`;
+  const title = rawName;
   const scriptCount = hub.script_count || hub.scriptCount || 0;
   const isVerified = hub.is_verified || hub.isVerified;
 

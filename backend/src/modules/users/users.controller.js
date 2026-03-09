@@ -47,9 +47,10 @@ export const getUserScripts = async (req, res) => {
 export const getDashboardStats = async (req, res) => {
     try {
         const userId = req.user.userId;
+        const days = parseInt(req.query.days) || 30;
         const [stats, viewsHistory] = await Promise.all([
             usersService.getUserDashboardStats(userId),
-            usersService.getUserViewsHistory(userId)
+            usersService.getUserViewsHistory(userId, days)
         ]);
 
         res.json({

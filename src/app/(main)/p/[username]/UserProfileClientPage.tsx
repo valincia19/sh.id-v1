@@ -154,7 +154,8 @@ export default function UserProfilePage() {
                                 title={script.title}
                                 game={script.gameName || "Unknown Game"}
                                 gameSlug={script.gameSlug}
-                                stars={script.likes}
+                                stars={script.views}
+                                statType="views"
                                 timeAgo={formatRelativeTime(script.createdAt)}
                                 tag={script.tags?.[0]?.name}
                                 href={`/s/${script.slug}`}

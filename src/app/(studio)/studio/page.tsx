@@ -35,6 +35,8 @@ export default function StudioOverviewPage() {
   const [deployStats, setDeployStats] = useState<DeploymentStats | null>(null);
   const [keyStats, setKeyStats] = useState<KeyStats | null>(null);
   const [plan, setPlan] = useState<PlanWithMaximums | null>(null);
+  const [chartDays, setChartDays] = useState(7);
+  const [chartLoading, setChartLoading] = useState(false);
 
   useEffect(() => {
     authApi.getMe()
@@ -44,7 +46,7 @@ export default function StudioOverviewPage() {
     const loadData = async () => {
       try {
         const [scripts, deploys, keys, planData] = await Promise.allSettled([
-          usersApi.getDashboardStats(),
+          usersApi.getDashboardStats(7),
           deploymentsApi.getStats(),
           keysApi.getStats(),
           plansApi.getMyPlan(),
@@ -65,6 +67,19 @@ export default function StudioOverviewPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleChartDaysChange = async (days: number) => {
+    setChartDays(days);
+    setChartLoading(true);
+    try {
+      const data = await usersApi.getDashboardStats(days);
+      setScriptStats(data);
+    } catch (e) {
+      // silently handled
+    } finally {
+      setChartLoading(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -83,6 +98,12 @@ export default function StudioOverviewPage() {
   const maxKeys = plan?.maximums?.maximum_keys ?? 0;
   const usedKeys = (keyStats?.total_active ?? 0) + (keyStats?.total_unused ?? 0);
   const keyPct = maxKeys > 0 ? Math.min(100, (usedKeys / maxKeys) * 100) : 0;
+
+  // Obfuscation: maximums = remaining (decremented on use), limits = plan cap
+  const obfLimit = plan?.limits?.maximum_obfuscation ?? 0;
+  const obfRemaining = plan?.maximums?.maximum_obfuscation ?? 0;
+  const obfUsed = Math.max(0, obfLimit - obfRemaining);
+  const obfPct = obfLimit > 0 ? Math.min(100, (obfUsed / obfLimit) * 100) : 0;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700 pb-20">
@@ -117,7 +138,7 @@ export default function StudioOverviewPage() {
       </section>
 
       {/* Bento Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
 
         {/* Scripts */}
         <Link href="/studio/scripts" className="group relative p-5 bg-[#0a0c10] border border-white/[0.04] rounded-xl hover:bg-white/[0.02] hover:border-emerald-500/20 transition-all overflow-hidden">
@@ -203,6 +224,30 @@ export default function StudioOverviewPage() {
             </div>
           </div>
         </Link>
+
+        {/* Obfuscations */}
+        <Link href="/studio/obfuscate" className="group relative p-5 bg-[#0a0c10] border border-white/[0.04] rounded-xl hover:bg-white/[0.02] hover:border-emerald-500/20 transition-all overflow-hidden">
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-mono font-medium text-offgray-500 uppercase tracking-widest flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-sm bg-emerald-500/40 group-hover:bg-emerald-400 transition-colors" />
+                Obfuscations
+              </p>
+              <svg width="14" height="14" className="text-offgray-600 group-hover:text-emerald-500 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+            </div>
+            <p className="text-3xl font-serif tracking-tight text-white">{obfRemaining.toLocaleString()}</p>
+            <div className="space-y-1.5">
+              <div className="h-1 rounded-full bg-white/[0.04] overflow-hidden">
+                <div className={`h-full rounded-full transition-all duration-700 ${obfPct >= 90 ? 'bg-rose-500' : 'bg-emerald-500'}`} style={{ width: `${obfPct}%` }} />
+              </div>
+              <div className="flex justify-between text-[10px] font-mono text-offgray-600">
+                <span className="text-emerald-600">{obfUsed} used</span>
+                <span>{obfRemaining} / {obfLimit} limit</span>
+              </div>
+            </div>
+          </div>
+        </Link>
       </div>
 
       {/* Plan Banner + Quick Links */}
@@ -229,6 +274,7 @@ export default function StudioOverviewPage() {
             <QuotaRow label="Scripts" used={scriptStats?.totalScripts ?? 0} max={null} />
             <QuotaRow label="Deployments" used={usedDeploys} max={maxDeploys} />
             <QuotaRow label="License Keys" used={usedKeys} max={maxKeys} />
+            <QuotaRow label="Obfuscation" used={obfUsed} max={obfLimit} />
           </div>
 
           <div className="mt-auto pt-5">
@@ -264,6 +310,14 @@ export default function StudioOverviewPage() {
               ),
               label: "License Keys",
               desc: "Generate & manage keys",
+            },
+            {
+              href: "/studio/obfuscate",
+              icon: (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+              ),
+              label: "Obfuscator",
+              desc: "Secure Lua payloads",
             },
             {
               href: "/studio/hubs",
@@ -302,24 +356,42 @@ export default function StudioOverviewPage() {
       {/* Script Performance Chart */}
       <section className="relative p-5 bg-[#0a0c10] border border-white/[0.04] rounded-xl overflow-hidden group">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-px bg-gradient-to-r from-transparent via-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-        <div className="flex items-center gap-2 mb-6">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
-          <h2 className="text-sm font-semibold text-offgray-100">Script Views - Last 7 Days</h2>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
+            <h2 className="text-sm font-semibold text-offgray-100">Script Views</h2>
+            {chartLoading && <div className="w-3 h-3 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />}
+          </div>
+          <div className="flex items-center bg-white/[0.03] border border-white/[0.06] rounded-lg overflow-hidden">
+            {[{ label: "1D", value: 1 }, { label: "7D", value: 7 }, { label: "30D", value: 30 }].map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => handleChartDaysChange(tab.value)}
+                className={`h-7 px-3 text-[10px] font-mono font-semibold tracking-wider transition-all ${chartDays === tab.value
+                  ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                  : "text-offgray-500 hover:text-offgray-300 hover:bg-white/[0.03]"
+                  }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="h-[160px] w-full flex items-end justify-between gap-[3px] px-1 group/chart">
+        <div className={`h-[160px] w-full flex items-end justify-between gap-[3px] px-1 group/chart transition-opacity ${chartLoading ? 'opacity-40' : ''}`}>
           {(() => {
-            const days = Array.from({ length: 7 }, (_, i) => {
+            const numDays = chartDays;
+            const days = Array.from({ length: numDays }, (_, i) => {
               const d = new Date();
-              d.setDate(d.getDate() - (6 - i));
+              d.setDate(d.getDate() - (numDays - 1 - i));
               return d.toISOString().split("T")[0];
             });
             const chartData = days.map((date) => {
               const entry = scriptStats?.viewsHistory?.find((h) => h.date === date);
-              return { date, views: entry ? entry.views : 0, dayName: new Date(date).toLocaleDateString("en-US", { weekday: "short" }) };
+              return { date, views: entry ? entry.views : 0 };
             });
             const maxViews = Math.max(...chartData.map((d) => d.views), 1);
             return chartData.map((d) => (
-              <div key={d.date} className="w-full bg-[#11141A] rounded-t-[2px] relative group/bar flex flex-col justify-end group-hover/chart:bg-white/[0.02]">
+              <div key={d.date} className="w-full bg-[#11141A] rounded-t-[2px] relative group/bar flex flex-col justify-end group-hover/chart:bg-white/[0.02]" style={{ minWidth: numDays > 10 ? '2px' : undefined }}>
                 <div style={{ height: `${Math.max((d.views / maxViews) * 100, 1)}%` }} className="w-full bg-[#059669] group-hover/bar:bg-[#10B981] transition-all duration-300 rounded-t-[2px]">
                   <div className="absolute -top-9 left-1/2 -translate-x-1/2 bg-[#1a1d21] border border-white/[0.08] px-2 py-1 rounded text-[11px] font-mono text-white opacity-0 group-hover/bar:opacity-100 pointer-events-none whitespace-nowrap z-10">
                     {d.views.toLocaleString()} views
@@ -330,11 +402,20 @@ export default function StudioOverviewPage() {
           })()}
         </div>
         <div className="flex justify-between text-[9px] text-offgray-600 font-mono tracking-widest uppercase mt-3 px-1">
-          {Array.from({ length: 7 }, (_, i) => {
-            const d = new Date();
-            d.setDate(d.getDate() - (6 - i));
-            return <span key={i}>{d.toLocaleDateString("en-US", { weekday: "short" })}</span>;
-          })}
+          {(() => {
+            const numDays = chartDays;
+            if (numDays <= 1) {
+              return <span>Today</span>;
+            }
+            const labelCount = Math.min(numDays, 7);
+            const step = Math.max(1, Math.floor((numDays - 1) / (labelCount - 1)));
+            return Array.from({ length: labelCount }, (_, i) => {
+              const offset = numDays <= 7 ? i : i * step;
+              const d = new Date();
+              d.setDate(d.getDate() - (numDays - 1 - offset));
+              return <span key={i}>{d.toLocaleDateString("en-US", numDays <= 7 ? { weekday: "short" } : { month: "short", day: "numeric" })}</span>;
+            });
+          })()}
         </div>
       </section>
 

@@ -16,11 +16,38 @@ export default function ExecutorRegistrationPage() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [user, setUser] = useState<any>(null);
 
+    // Form State
+    const [name, setName] = useState("");
+    const [description, setDescription] = useState("");
+    const [website, setWebsite] = useState("");
+    const [platforms, setPlatforms] = useState<string[]>(["Windows"]);
+    const [price, setPrice] = useState("Free");
+    const [status, setStatus] = useState("Working");
+    const [tags, setTags] = useState<string[]>([]);
+    const [tagInput, setTagInput] = useState("");
+    const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+    // Socials
+    const [discord, setDiscord] = useState("");
+    const [telegram, setTelegram] = useState("");
+
+    // Initial Version Setup
+    const [version, setVersion] = useState("v1.0.0");
+    const [downloadUrl, setDownloadUrl] = useState("");
+    const [patchNotes, setPatchNotes] = useState("");
+
+    // Image State
+    const [logoPreview, setLogoPreview] = useState<string | null>(null);
+    const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+    const [cropperOpen, setCropperOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [activeCropType, setActiveCropType] = useState<'logo' | 'banner'>('logo');
+
     useEffect(() => {
-        authApi.getMe().then(({user}) => setUser(user)).catch(() => setUser(null));
+        authApi.getMe().then(({ user }) => setUser(user)).catch(() => setUser(null));
     }, []);
 
-    const isDiscordUser = user?.avatarUrl?.includes('discord') || false;
+    const isDiscordUser = user?.providers?.includes('discord') || false;
 
     if (user && !isDiscordUser) {
         return (
@@ -49,39 +76,21 @@ export default function ExecutorRegistrationPage() {
                         href="/studio/executors"
                         className="h-10 px-6 rounded-md bg-[#0a0c10] border border-white/[0.04] hover:bg-white/[0.02] hover:border-white/[0.1] text-offgray-400 hover:text-white flex items-center transition-all w-full sm:w-auto justify-center font-mono text-xs uppercase tracking-widest"
                     >
-                        Back to List
+                        Go Back
                     </Link>
+                    <button
+                        onClick={async () => {
+                            await authApi.logout();
+                            window.location.href = "/";
+                        }}
+                        className="h-10 px-6 rounded-md bg-[#11141A] border border-red-500/20 hover:border-red-500/40 hover:bg-red-500/10 text-red-400 hover:text-red-300 flex items-center justify-center transition-all font-mono text-xs uppercase tracking-widest w-full sm:w-auto"
+                    >
+                        Sign Out & Reauthenticate
+                    </button>
                 </div>
             </div>
         );
     }
-
-    // Form State
-    const [name, setName] = useState("");
-    const [description, setDescription] = useState("");
-    const [website, setWebsite] = useState("");
-    const [platforms, setPlatforms] = useState<string[]>(["Windows"]);
-    const [price, setPrice] = useState("Free");
-    const [status, setStatus] = useState("Working");
-    const [tags, setTags] = useState<string[]>([]);
-    const [tagInput, setTagInput] = useState("");
-    const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-
-    // Socials
-    const [discord, setDiscord] = useState("");
-    const [telegram, setTelegram] = useState("");
-
-    // Initial Version Setup
-    const [version, setVersion] = useState("v1.0.0");
-    const [downloadUrl, setDownloadUrl] = useState("");
-    const [patchNotes, setPatchNotes] = useState("");
-
-    // Image State
-    const [logoPreview, setLogoPreview] = useState<string | null>(null);
-    const [bannerPreview, setBannerPreview] = useState<string | null>(null);
-    const [cropperOpen, setCropperOpen] = useState(false);
-    const [selectedImage, setSelectedImage] = useState<string | null>(null);
-    const [activeCropType, setActiveCropType] = useState<'logo' | 'banner'>('logo');
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'banner') => {
         const file = e.target.files?.[0];
@@ -198,24 +207,38 @@ export default function ExecutorRegistrationPage() {
 
     if (isSuccess) {
         return (
-            <div className="max-w-2xl mx-auto py-12 px-6 bg-[#11141A] border border-[#10B981]/10 rounded-xl relative overflow-hidden flex flex-col items-center justify-center text-center animate-in fade-in zoom-in-95 duration-500">
-                <div className="absolute inset-0 bg-[#10B981]/5 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#10B981]/10 via-transparent to-transparent pointer-events-none" />
-                <div className="w-16 h-16 rounded-2xl bg-[#10B981]/10 flex items-center justify-center mb-6 relative z-10 border border-[#10B981]/20">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                        <polyline points="22 4 12 14.01 9 11.01" />
+            <div className="max-w-md mx-auto py-16 text-center space-y-6 animate-in fade-in zoom-in-95 duration-700">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto border shadow-xl bg-[#11141A] border-amber-500/20 text-amber-400">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
                     </svg>
                 </div>
-                <h2 className="text-2xl md:text-3xl font-serif tracking-tight text-offgray-50 mb-3 relative z-10">Application Submitted</h2>
-                <p className="text-sm font-mono text-offgray-400 mb-8 max-w-md mx-auto relative z-10">
-                    Your executor <span className="text-[#10B981]">{name}</span> has been successfully submitted and is pending review.
-                </p>
-                <div className="flex gap-4 relative z-10">
+
+                <div className="space-y-1.5">
+                    <h2 className="text-2xl font-serif tracking-tight text-offgray-50">
+                        Application Pending
+                    </h2>
+                    <p className="text-sm font-mono text-offgray-500 max-w-sm mx-auto">
+                        Your executor <span className="text-offgray-200">{name}</span> is currently <span className="text-amber-400 uppercase tracking-widest text-[10px]">Under Review</span>.
+                    </p>
+                    <p className="text-[11px] font-mono text-offgray-600 mt-2">
+                        Our moderators will review your listing shortly.
+                    </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 font-mono text-xs uppercase tracking-widest">
                     <Link
                         href="/studio/executors"
-                        className="px-6 py-2.5 rounded-lg font-mono text-xs uppercase tracking-widest text-offgray-300 hover:text-white hover:bg-white/5 transition-colors border border-white/[0.04]"
+                        className="h-10 px-6 rounded-md bg-[#0a0c10] border border-white/[0.04] hover:bg-white/[0.02] hover:border-white/[0.1] text-offgray-400 hover:text-white flex items-center transition-all w-full sm:w-auto justify-center"
                     >
-                        Return to List
+                        View Executors
+                    </Link>
+                    <Link
+                        href="/studio"
+                        className="h-10 px-6 rounded-md bg-[#059669] text-white hover:bg-[#10B981] flex items-center transition-all w-full sm:w-auto justify-center"
+                    >
+                        Dashboard Home
                     </Link>
                 </div>
             </div>

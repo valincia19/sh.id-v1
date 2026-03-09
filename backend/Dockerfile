@@ -17,7 +17,12 @@ RUN apk add --no-cache \
     aws-cli \
     bash \
     gzip \
-    bc
+    bc \
+    lua5.3 \
+    lua5.3-libs
+
+# Symlink lua5.3 ke lua agar bisa dipanggil universal
+RUN ln -sf /usr/bin/lua5.3 /usr/bin/lua
 
 # Set working directory
 WORKDIR /app

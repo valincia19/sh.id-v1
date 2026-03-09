@@ -5,6 +5,39 @@ import pool from "../../db/postgres.js";
  * @param {string} userId
  * @returns {Object} User plan
  */
+export const getPlanLimits = (planType = 'free') => {
+    switch (planType) {
+        case 'pro':
+            return {
+                maximum_obfuscation: 50,
+                maximum_keys: 5000,
+                maximum_deployments: 1000,
+                maximum_devices_per_key: 2
+            };
+        case 'enterprise':
+            return {
+                maximum_obfuscation: 50000,
+                maximum_keys: 50000,
+                maximum_deployments: 10000,
+                maximum_devices_per_key: 10
+            };
+        case 'custom':
+            return {
+                maximum_obfuscation: 50000,
+                maximum_keys: 50000,
+                maximum_deployments: 10000,
+                maximum_devices_per_key: 50
+            };
+        default: // free
+            return {
+                maximum_obfuscation: 3,
+                maximum_keys: 10,
+                maximum_deployments: 50,
+                maximum_devices_per_key: 1
+            };
+    }
+};
+
 export const getUserPlan = async (userId) => {
     let result = await pool.query(
         `SELECT * FROM user_plans WHERE user_id = $1`,
@@ -63,7 +96,7 @@ export const getUserMaximums = async (userId, planType = 'free') => {
     );
 
     if (result.rows.length === 0) {
-        let obsMax = 0;
+        let obsMax = 3;
         let keyMax = 10;
         let devMax = 50;
         let devPerKey = 1;
@@ -96,7 +129,7 @@ export const getUserMaximums = async (userId, planType = 'free') => {
         const isResetDue = new Date() > new Date(maximums.maximums_reset_at);
 
         if (isResetDue) {
-            let obsMax = 0;
+            let obsMax = 3;
             let keyMax = 10;
             let devMax = 50;
             let devPerKey = 1;
@@ -143,8 +176,9 @@ export const getUserMaximums = async (userId, planType = 'free') => {
 export const getUserPlanWithMaximums = async (userId) => {
     const plan = await getUserPlan(userId);
     const maximums = await getUserMaximums(userId, plan.plan_type);
+    const limits = getPlanLimits(plan.plan_type);
 
-    return { plan, maximums };
+    return { plan, maximums, limits };
 };
 
 /**

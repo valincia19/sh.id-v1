@@ -1,5 +1,9 @@
 import * as adminService from "./admin.service.js";
 import logger from "../../utils/logger.js";
+import fs from "fs/promises";
+import path from "path";
+import { fileURLToPath } from "url";
+import { clearStubCache } from "../deployments/protection.service.js";
 
 /**
  * GET /api/admin/stats
@@ -232,6 +236,17 @@ export const updateHubStatus = async (req, res) => {
     }
 };
 
+/** PATCH /api/admin/hubs/:id */
+export const updateHub = async (req, res) => {
+    try {
+        const hub = await adminService.updateHub(req.params.id, req.body);
+        res.json({ success: true, data: hub });
+    } catch (error) {
+        const code = error.statusCode || 500;
+        res.status(code).json({ error: 'Error', message: error.message || 'Failed to update hub' });
+    }
+};
+
 /** PATCH /api/admin/hubs/:id/owner */
 export const changeHubOwner = async (req, res) => {
     try {
@@ -335,5 +350,95 @@ export const updatePlan = async (req, res) => {
     } catch (error) {
         const code = error.statusCode || 500;
         res.status(code).json({ error: 'Error', message: error.message || 'Failed to update plan' });
+    }
+};
+
+/**
+ * GET /api/admin/settings/stub
+ */
+export const getStubObfuscated = async (req, res) => {
+    try {
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
+        const stubPath = path.join(__dirname, "../deployments/stub-obfuscated.lua");
+
+        const content = await fs.readFile(stubPath, "utf-8");
+        res.json({ success: true, data: content });
+    } catch (error) {
+        logger.error("Admin getStubObfuscated error: %o", error);
+        // If file doesn't exist, return empty string so editor can create it
+        if (error.code === 'ENOENT') {
+            return res.json({ success: true, data: "" });
+        }
+        res.status(500).json({ error: "ServerError", message: "Failed to read stub file" });
+    }
+};
+
+/**
+ * PUT /api/admin/settings/stub
+ */
+export const updateStubObfuscated = async (req, res) => {
+    try {
+        const { content } = req.body;
+        if (typeof content !== "string") {
+            return res.status(400).json({ error: "BadRequest", message: "Content must be a string" });
+        }
+
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
+        const stubPath = path.join(__dirname, "../deployments/stub-obfuscated.lua");
+
+        await fs.writeFile(stubPath, content, "utf-8");
+        clearStubCache();
+
+        logger.info("Admin %s updated stub-obfuscated.lua", req.user?.userId || "unknown");
+        res.json({ success: true, message: "Stub updated successfully" });
+    } catch (error) {
+        logger.error("Admin updateStubObfuscated error: %o", error);
+        res.status(500).json({ error: "ServerError", message: "Failed to update stub file" });
+    }
+};
+
+/**
+ * GET /api/admin/settings/stub/raw
+ */
+export const getStubRaw = async (req, res) => {
+    try {
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
+        const stubPath = path.join(__dirname, "../deployments/stub.lua");
+
+        const content = await fs.readFile(stubPath, "utf-8");
+        res.json({ success: true, data: content });
+    } catch (error) {
+        logger.error("Admin getStubRaw error: %o", error);
+        if (error.code === 'ENOENT') {
+            return res.json({ success: true, data: "" });
+        }
+        res.status(500).json({ error: "ServerError", message: "Failed to read raw stub file" });
+    }
+};
+
+/**
+ * PUT /api/admin/settings/stub/raw
+ */
+export const updateStubRaw = async (req, res) => {
+    try {
+        const { content } = req.body;
+        if (typeof content !== "string") {
+            return res.status(400).json({ error: "BadRequest", message: "Content must be a string" });
+        }
+
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
+        const stubPath = path.join(__dirname, "../deployments/stub.lua");
+
+        await fs.writeFile(stubPath, content, "utf-8");
+
+        logger.info("Admin %s updated original stub.lua", req.user?.userId || "unknown");
+        res.json({ success: true, message: "Raw stub updated successfully" });
+    } catch (error) {
+        logger.error("Admin updateStubRaw error: %o", error);
+        res.status(500).json({ error: "ServerError", message: "Failed to update raw stub file" });
     }
 };

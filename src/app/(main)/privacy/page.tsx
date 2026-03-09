@@ -1,5 +1,5 @@
 export const metadata = {
-    title: "Privacy Policy | ScriptHub",
+    title: "Privacy Policy",
     description: "Privacy Policy for ScriptHub.id",
 };
 

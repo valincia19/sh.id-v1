@@ -242,7 +242,7 @@ export async function serveDeployment(req, res) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ScriptHub — Protected Script</title>
+    <title>ScriptHub - Protected Script</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -408,7 +408,67 @@ export async function challengeDeployment(req, res) {
 }
 
 /**
- * Verify endpoint — validates HWID + token and returns a short-lived signed CDN URL.
+ * Obfuscate Script (Studio API) — 3-Layer Architecture
+ * POST /api/deployments/obfuscate
+ * 1. Encrypts raw script → uploads to script/{username}/ on S3
+ * 2. Picks random loader from pool → uploads to v1/{userId}/ on S3
+ * 3. Returns the loader text to the frontend
+ */
+export async function obfuscateDeployment(req, res) {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ error: "ValidationError", details: errors.array() });
+        }
+
+        // Check obfuscation quota
+        const { maximums } = await plansService.getUserPlanWithMaximums(req.user.userId);
+        const remainingObfuscation = maximums?.maximum_obfuscation ?? 0;
+
+        if (remainingObfuscation <= 0) {
+            return res.status(403).json({
+                error: "QuotaExceeded",
+                message: "You have reached your monthly obfuscation limit. Upgrade your plan for more.",
+            });
+        }
+
+
+        const { title, content } = req.body;
+        const username = req.user.username;
+
+        // Build the CDN base URL for the encrypted script path
+        const cdnBaseUrl = config.cdnBaseUrl || `${req.headers['x-forwarded-proto'] || req.protocol}://${req.headers['x-forwarded-host'] || req.headers['host']}`;
+
+        // Create the obfuscated deployment (3-layer)
+        const result = await deploymentsService.createObfuscated(
+            req.user.userId,
+            username,
+            { title, content },
+            cdnBaseUrl
+        );
+
+        // Deduct quota (berkurang -1)
+        try {
+            await plansService.deductMaximum(req.user.userId, 'maximum_obfuscation', 1);
+        } catch (quotaError) {
+            // If deduction fails (though we checked before), we should technically roll back deployment
+            // but for simplicity and since we checked, we'll just log it.
+            logger.error("Quota deduction failed after creation: %o", quotaError);
+        }
+
+        const { loaderText, ...deployment } = result;
+
+        res.status(201).json({ success: true, data: { deployment, loaderText } });
+    } catch (error) {
+        logger.error("Obfuscate Deployment Error: %o", error);
+        res.status(500).json({ error: "ServerError", message: "Failed to obfuscate script" });
+    }
+}
+
+/**
+ * Verify endpoint — validates HWID + token.
+ * For obfuscated deployments (has script_s3_key): returns { loaderUrl } (signed URL to loader on CDN).
+ * For regular deployments: returns { payload } (RC4 encrypted script content).
  * GET /v1/verify?key=<deployKey>&hwid=<hwid>&ts=<timestamp>&token=<token>
  */
 export async function verifyDeployment(req, res) {
@@ -425,7 +485,7 @@ export async function verifyDeployment(req, res) {
             return res.status(403).json({ error: result.reason });
         }
 
-        // Get deployment to find s3_key (use cache)
+        // Get deployment (use cache)
         const cacheKey = `deployment:${key}`;
         let deployment = await getCache(cacheKey);
 
@@ -440,12 +500,27 @@ export async function verifyDeployment(req, res) {
             return res.status(404).json({ error: "Deployment not found" });
         }
 
-        // Generate a short-lived presigned S3 URL (30 seconds)
-        const signedUrl = await protectionService.generateSignedUrl(deployment.s3_key, 30);
+        // 3-Layer: If deployment has script_s3_key, it's obfuscated.
+        // Return a signed URL to the LOADER (s3_key) so stub can fetch it.
+        if (deployment.script_s3_key) {
+            const loaderUrl = await protectionService.generateSignedUrl(deployment.s3_key, 30);
+            return res.json({ loaderUrl });
+        }
 
-        res.json({ url: signedUrl });
+        // Regular deployment: proxy fetch + RC4 encrypt
+        let rawContent = "";
+        try {
+            rawContent = await deploymentsService.getContent(deployment.s3_key);
+        } catch (err) {
+            logger.error("Failed to fetch S3 content for deployment %s in /verify: %o", deployment.id, err);
+            return res.status(500).json({ error: "Failed to read script content" });
+        }
+
+        const encryptedPayload = protectionService.encryptScript(rawContent, key);
+        res.json({ payload: encryptedPayload });
     } catch (error) {
         logger.error("Verify Error: %o", error);
         res.status(500).json({ error: "Internal server error" });
     }
 }
+

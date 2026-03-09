@@ -5,6 +5,7 @@ import redisClient from "../../db/redis.js";
 import { authenticate } from "../../middleware/auth.js";
 import { checkPermission } from "../../middleware/rbac.js";
 import * as adminController from "./admin.controller.js";
+import * as adminLoaderController from "./admin.loaders.controller.js";
 import { getLockedAccounts, unlockAccount, getLockoutStatus } from "../../middleware/lockout.js";
 import config from "../../config/index.js";
 import logger from "../../utils/logger.js";
@@ -53,6 +54,7 @@ router.get("/keys", adminController.getKeys);
 router.delete("/keys/:id", adminController.deleteKey);
 
 router.get("/hubs", checkPermission('hubs.read'), adminController.getHubs);
+router.patch("/hubs/:id", checkPermission('hubs.update'), adminController.updateHub);
 router.delete("/hubs/:id", checkPermission('hubs.delete'), adminController.deleteHub);
 router.patch("/hubs/:id/status", checkPermission('hubs.update'), adminController.updateHubStatus);
 router.patch("/hubs/:id/owner", checkPermission('hubs.update'), adminController.changeHubOwner);
@@ -65,6 +67,22 @@ router.patch("/executors/:id/restore", adminController.restoreExecutor);
 
 router.get("/plans", adminController.getPlans);
 router.patch("/plans/:id", adminController.updatePlan);
+
+// ============================================
+// Settings / Stub Management
+// ============================================
+router.get("/settings/stub", adminController.getStubObfuscated);
+router.put("/settings/stub", adminController.updateStubObfuscated);
+router.get("/settings/stub/raw", adminController.getStubRaw);
+router.put("/settings/stub/raw", adminController.updateStubRaw);
+
+// ============================================
+// Loader Management
+// ============================================
+router.get("/loaders", checkPermission('admin.access'), adminLoaderController.getLoaders);
+router.get("/loaders/:filename", checkPermission('admin.access'), adminLoaderController.getLoaderContent);
+router.put("/loaders/:filename", checkPermission('admin.access'), adminLoaderController.upsertLoader);
+router.delete("/loaders/:filename", checkPermission('admin.access'), adminLoaderController.deleteLoader);
 
 // ============================================
 // Account Lockout Management

@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import TrendingClientPage from './TrendingClientPage';
 
 export const metadata: Metadata = {
-    title: 'Trending Scripts | ScriptHub',
+    title: 'Trending Scripts',
     description: 'Discover the most popular and highly-rated Roblox scripts on ScriptHub today.',
     alternates: {
         canonical: 'https://scripthub.id/trending',

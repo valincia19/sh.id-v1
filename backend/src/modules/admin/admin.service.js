@@ -383,8 +383,48 @@ export const updateHubStatus = async (hubId, status) => {
     const allowed = ['active', 'pending', 'suspended'];
     if (!allowed.includes(status)) throw { statusCode: 400, message: `Invalid status. Allowed: ${allowed.join(', ')}` };
     const result = await pool.query(
-        `UPDATE hubs SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING id, name, status`,
+        `UPDATE hubs SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING id, name, status, owner_id`,
         [status, hubId]
+    );
+    if (result.rowCount === 0) throw { statusCode: 404, message: 'Hub not found' };
+
+    const hub = result.rows[0];
+
+    // Automatically assign vendor role on approval
+    if (status === 'active') {
+        const ownerId = hub.owner_id;
+        const roleResult = await pool.query(`SELECT id FROM roles WHERE name = 'vendor'`);
+        if (roleResult.rowCount > 0) {
+            const vendorRoleId = roleResult.rows[0].id;
+            await pool.query(
+                `INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+                [ownerId, vendorRoleId]
+            );
+            await invalidateUserRoles(ownerId);
+            await invalidateUserPermissions(ownerId);
+        }
+    }
+
+    return hub;
+};
+
+/** Update hub details (admin) */
+export const updateHub = async (hubId, fields) => {
+    const allowed = ['name', 'slug', 'is_official', 'is_verified'];
+    const sets = [];
+    const vals = [];
+    let i = 1;
+    for (const [k, v] of Object.entries(fields)) {
+        if (allowed.includes(k) && v !== undefined) {
+            sets.push(`${k} = $${i++}`);
+            vals.push(v);
+        }
+    }
+    if (sets.length === 0) throw { statusCode: 400, message: 'No valid fields' };
+    vals.push(hubId);
+    const result = await pool.query(
+        `UPDATE hubs SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${i} RETURNING id, name, slug, status, is_official, is_verified, updated_at`,
+        vals
     );
     if (result.rowCount === 0) throw { statusCode: 404, message: 'Hub not found' };
     return result.rows[0];
@@ -465,11 +505,29 @@ export const updateExecutorStatus = async (executorId, status) => {
     const allowed = ['active', 'pending', 'rejected', 'archived'];
     if (!allowed.includes(status)) throw { statusCode: 400, message: `Invalid status. Allowed: ${allowed.join(', ')}` };
     const result = await pool.query(
-        `UPDATE executors SET status = $1::executor_status, updated_at = NOW() WHERE id = $2 RETURNING id, name, status`,
+        `UPDATE executors SET status = $1::executor_status, updated_at = NOW() WHERE id = $2 RETURNING id, name, status, owner_id`,
         [status, executorId]
     );
     if (result.rowCount === 0) throw { statusCode: 404, message: 'Executor not found' };
-    return result.rows[0];
+
+    const executor = result.rows[0];
+
+    // Automatically assign vendor role on approval
+    if (status === 'active') {
+        const ownerId = executor.owner_id;
+        const roleResult = await pool.query(`SELECT id FROM roles WHERE name = 'vendor'`);
+        if (roleResult.rowCount > 0) {
+            const vendorRoleId = roleResult.rows[0].id;
+            await pool.query(
+                `INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+                [ownerId, vendorRoleId]
+            );
+            await invalidateUserRoles(ownerId);
+            await invalidateUserPermissions(ownerId);
+        }
+    }
+
+    return executor;
 };
 
 /** Change executor owner (admin) */

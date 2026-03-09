@@ -33,13 +33,14 @@ const statusColor = (s: string) => {
 };
 
 // ── Fixed-position row menu ───────────────────────────────────────────────────
-function HubRowMenu({ hub, isOpen, onToggle, onStatusChange, onDelete, onChangeOwner, onClose }: {
+function HubRowMenu({ hub, isOpen, onToggle, onStatusChange, onDelete, onChangeOwner, onEdit, onClose }: {
     hub: AdminHub;
     isOpen: boolean;
     onToggle: (e: React.MouseEvent) => void;
     onStatusChange: (id: string, status: string) => void;
     onDelete: (h: AdminHub) => void;
     onChangeOwner: (h: AdminHub) => void;
+    onEdit: (h: AdminHub) => void;
     onClose: () => void;
 }) {
     const btnRef = useRef<HTMLButtonElement>(null);
@@ -101,6 +102,13 @@ function HubRowMenu({ hub, isOpen, onToggle, onStatusChange, onDelete, onChangeO
                             </svg>
                             View Hub
                         </button>
+                        <button onClick={(e) => { e.stopPropagation(); onEdit(hub); onClose(); }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] font-mono text-offgray-300 hover:text-white hover:bg-white/[0.04] transition-colors">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
+                            Edit Hub
+                        </button>
                         <button onClick={(e) => { e.stopPropagation(); onChangeOwner(hub); onClose(); }}
                             className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] font-mono text-indigo-400 hover:text-indigo-300 hover:bg-white/[0.04] transition-colors">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -139,6 +147,11 @@ export default function AdminHubsPage() {
     const [modOwnerHub, setModOwnerHub] = useState<AdminHub | null>(null);
     const [newOwnerUsername, setNewOwnerUsername] = useState("");
     const [isModOwnerLoading, setIsModOwnerLoading] = useState(false);
+
+    // Edit Hub State
+    const [editHub, setEditHub] = useState<AdminHub | null>(null);
+    const [editForm, setEditForm] = useState({ name: "", slug: "", is_official: false, is_verified: false });
+    const [isEditSaving, setIsEditSaving] = useState(false);
 
     const load = useCallback(async (q: string, status: string) => {
         setIsLoading(true);
@@ -203,6 +216,30 @@ export default function AdminHubsPage() {
             alert(err.response?.data?.message || "Failed to update hub owner.");
         } finally {
             setIsModOwnerLoading(false);
+        }
+    };
+
+    const handleEdit = (hub: AdminHub) => {
+        setEditForm({ name: hub.name, slug: hub.slug, is_official: hub.is_official, is_verified: hub.is_verified });
+        setEditHub(hub);
+    };
+
+    const saveEdit = async () => {
+        if (!editHub) return;
+        setIsEditSaving(true);
+        try {
+            await apiClient.patch(`/admin/hubs/${editHub.id}`, {
+                name: editForm.name,
+                slug: editForm.slug,
+                is_official: editForm.is_official,
+                is_verified: editForm.is_verified
+            });
+            setHubs(prev => prev.map(h => h.id === editHub.id ? { ...h, name: editForm.name, slug: editForm.slug, is_official: editForm.is_official, is_verified: editForm.is_verified } : h));
+            setEditHub(null);
+        } catch (err: any) {
+            alert(err.response?.data?.message || "Failed to update hub.");
+        } finally {
+            setIsEditSaving(false);
         }
     };
 
@@ -289,6 +326,7 @@ export default function AdminHubsPage() {
                                                 onStatusChange={handleStatusChange}
                                                 onDelete={handleDelete}
                                                 onChangeOwner={(hub) => setModOwnerHub(hub)}
+                                                onEdit={handleEdit}
                                                 onClose={() => setOpenMenuId(null)} />
                                         </td>
                                     </tr>
@@ -330,6 +368,68 @@ export default function AdminHubsPage() {
                             >
                                 {isModOwnerLoading && <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
                                 Transfer Ownership
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Hub Modal */}
+            {editHub && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0a0c0f]/80 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="absolute inset-0" onClick={() => setEditHub(null)} />
+                    <div className="relative w-full max-w-sm bg-[#0f1115] border border-white/[0.06] rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-6 border-b border-white/[0.04]">
+                            <h3 className="text-lg font-serif text-white">Edit Hub</h3>
+                            <p className="text-xs text-offgray-500 mt-1 font-mono">Update "{editHub.name}" settings.</p>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="space-y-3 pb-2">
+                                <div>
+                                    <label className="block text-[10px] font-mono font-bold text-offgray-600 uppercase tracking-widest mb-1">Hub Name</label>
+                                    <input
+                                        type="text"
+                                        value={editForm.name}
+                                        onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                                        className="w-full h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[13px] text-offgray-200 outline-none focus:border-rose-500/30 transition-all font-mono"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-mono font-bold text-offgray-600 uppercase tracking-widest mb-1">Hub Slug</label>
+                                    <input
+                                        type="text"
+                                        value={editForm.slug}
+                                        onChange={(e) => setEditForm(prev => ({ ...prev, slug: e.target.value }))}
+                                        className="w-full h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[13px] text-offgray-200 outline-none focus:border-rose-500/30 transition-all font-mono"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-4 border-t border-white/[0.04] pt-4">
+                                <label className="flex items-center gap-3 cursor-pointer group">
+                                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${editForm.is_verified ? 'bg-amber-500 border-amber-500' : 'bg-white/[0.04] border-white/[0.06] group-hover:border-white/[0.1]'}`}>
+                                        {editForm.is_verified && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+                                    </div>
+                                    <span className="text-[13px] font-mono text-offgray-200">Verified Hub <span className="text-offgray-500 text-[11px] block">(Amber checkmark)</span></span>
+                                    <input type="checkbox" className="hidden" checked={editForm.is_verified} onChange={(e) => setEditForm(prev => ({ ...prev, is_verified: e.target.checked }))} />
+                                </label>
+                                <label className="flex items-center gap-3 cursor-pointer group">
+                                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${editForm.is_official ? 'bg-rose-500 border-rose-500' : 'bg-white/[0.04] border-white/[0.06] group-hover:border-white/[0.1]'}`}>
+                                        {editForm.is_official && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+                                    </div>
+                                    <span className="text-[13px] font-mono text-offgray-200">Official Hub <span className="text-offgray-500 text-[11px] block">(Rose checkmark)</span></span>
+                                    <input type="checkbox" className="hidden" checked={editForm.is_official} onChange={(e) => setEditForm(prev => ({ ...prev, is_official: e.target.checked }))} />
+                                </label>
+                            </div>
+                        </div>
+                        <div className="p-6 pt-0 flex gap-3">
+                            <button onClick={() => setEditHub(null)} className="flex-1 h-10 text-[13px] font-medium text-offgray-400 hover:text-white transition-colors">Cancel</button>
+                            <button
+                                onClick={saveEdit}
+                                disabled={isEditSaving}
+                                className="flex-[2] h-10 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[13px] font-medium rounded-lg transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2"
+                            >
+                                {isEditSaving && <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
+                                Save Changes
                             </button>
                         </div>
                     </div>

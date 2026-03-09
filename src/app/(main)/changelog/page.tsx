@@ -1,7 +1,7 @@
 import { CHANGELOG_DATA } from "@/lib/constants/changelog";
 
 export const metadata = {
-    title: "Changelogs | ScriptHub",
+    title: "Changelogs",
     description: "Latest updates and changes to ScriptHub",
 };
 

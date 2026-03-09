@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
 
         if (!profile) return {};
 
-        const title = `@${profile.username} | ScriptHub`;
+        const title = `@${profile.username}`;
         const description = profile.bio
             ? profile.bio.substring(0, 160)
             : `Check out scripts by ${profile.display_name || profile.username} on ScriptHub.`;
@@ -56,7 +56,7 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
         };
     } catch {
         return {
-            title: `@${username} | ScriptHub`,
+            title: `@${username}`,
         };
     }
 }

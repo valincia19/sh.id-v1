@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import SearchClientPage from './SearchClientPage';
 
 export const metadata: Metadata = {
-    title: 'Search | ScriptHub',
+    title: 'Search',
     description: 'Search for Roblox scripts, hubs, games, and executors on ScriptHub.',
     robots: {
         index: false,

@@ -26,9 +26,17 @@ export interface UserMaximums {
     updated_at: string;
 }
 
+export interface PlanLimits {
+    maximum_obfuscation: number;
+    maximum_keys: number;
+    maximum_deployments: number;
+    maximum_devices_per_key: number;
+}
+
 export interface PlanWithMaximums {
     plan: UserPlan;
     maximums: UserMaximums;
+    limits: PlanLimits;
 }
 
 // ============================================

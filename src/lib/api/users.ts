@@ -69,8 +69,8 @@ export const getUserScripts = async (username: string): Promise<Script[]> => {
     return response.data.data.map(mapScriptData);
 };
 
-export const getDashboardStats = async (): Promise<DashboardStats> => {
-    const response = await apiClient.get("/users/me/stats");
+export const getDashboardStats = async (days: number = 30): Promise<DashboardStats> => {
+    const response = await apiClient.get(`/users/me/stats?days=${days}`);
     return response.data.data;
 };
 

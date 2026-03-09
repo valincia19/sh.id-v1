@@ -23,11 +23,20 @@ export default function HubRegistrationPage() {
     const [discordServer, setDiscordServer] = useState("");
     const [errors, setErrors] = useState<Record<string, string>>({});
 
+    // Form Data
+    const [logoPreview, setLogoPreview] = useState<string | null>(null);
+    const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+
+    // Cropper State
+    const [cropperOpen, setCropperOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [activeCropType, setActiveCropType] = useState<'logo' | 'banner'>('logo');
+
     // Check for existing hubs and auth user
     useEffect(() => {
         const checkExistingHubs = async () => {
             try {
-                authApi.getMe().then(({user}) => setUser(user)).catch(() => setUser(null));
+                authApi.getMe().then(({ user }) => setUser(user)).catch(() => setUser(null));
 
                 const hubs = await hubsApi.getMyHubs();
                 if (hubs && hubs.length > 0) {
@@ -44,15 +53,6 @@ export default function HubRegistrationPage() {
 
         checkExistingHubs();
     }, []);
-
-    // Form Data
-    const [logoPreview, setLogoPreview] = useState<string | null>(null);
-    const [bannerPreview, setBannerPreview] = useState<string | null>(null);
-
-    // Cropper State
-    const [cropperOpen, setCropperOpen] = useState(false);
-    const [selectedImage, setSelectedImage] = useState<string | null>(null);
-    const [activeCropType, setActiveCropType] = useState<'logo' | 'banner'>('logo');
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'banner') => {
         const file = e.target.files?.[0];
@@ -143,9 +143,8 @@ export default function HubRegistrationPage() {
         );
     }
 
-    // Attempt to determine if the user logged in via Discord. 
-    // In many typical implementations, Discord users have a Discord CDN avatar or specific roles.
-    const isDiscordUser = user?.avatarUrl?.includes('discord') || false;
+    // User providers include Discord
+    const isDiscordUser = user?.providers?.includes('discord') || false;
 
     if (!document.cookie.includes('scripthub_user')) {
         // Hydration check fallback if needed, but we rely on user object

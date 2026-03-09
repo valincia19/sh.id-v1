@@ -59,9 +59,11 @@ export const getUserDashboardStats = async (userId) => {
 };
 
 /**
- * Get user views history (last 30 days)
+ * Get user views history
+ * @param {string} userId
+ * @param {number} days - Number of days to fetch (default 30)
  */
-export const getUserViewsHistory = async (userId) => {
+export const getUserViewsHistory = async (userId, days = 30) => {
     const query = `
     SELECT 
         TO_CHAR(v.viewed_at, 'YYYY-MM-DD') as date,
@@ -69,11 +71,11 @@ export const getUserViewsHistory = async (userId) => {
     FROM script_views v
     JOIN scripts s ON v.script_id = s.id
     WHERE s.owner_id = $1
-    AND v.viewed_at >= NOW() - INTERVAL '30 days'
+    AND v.viewed_at >= NOW() - INTERVAL '1 day' * $2
     GROUP BY TO_CHAR(v.viewed_at, 'YYYY-MM-DD')
     ORDER BY date ASC
     `;
-    const result = await pool.query(query, [userId]);
+    const result = await pool.query(query, [userId, days]);
     return result.rows;
 };
 

@@ -1,5 +1,5 @@
 export const metadata = {
-    title: "Terms of Service | ScriptHub",
+    title: "Terms of Service",
     description: "Terms of Service for using ScriptHub.id",
 };
 

@@ -356,26 +356,31 @@ export const softDeleteScript = async (id) => {
 };
 
 /**
- * Record a unique view
- * Returns true if the view was counted (new unique view), false otherwise
+ * Record a view (unique per IP per script per day)
+ * Returns true if the view was counted, false otherwise
  */
 export const recordView = async (scriptId, ipAddress) => {
-    // 1. Try to insert into script_views (ON CONFLICT DO NOTHING handle uniqueness)
-    const insertQuery = `
-        INSERT INTO script_views (script_id, ip_address)
-        VALUES ($1, $2)
-        ON CONFLICT (script_id, ip_address) DO NOTHING
-        RETURNING id
+    // Check if this IP already viewed this script today (using UTC date to match index)
+    const checkQuery = `
+        SELECT id FROM script_views 
+        WHERE script_id = $1 AND ip_address = $2 AND (viewed_at AT TIME ZONE 'UTC')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::date
+        LIMIT 1
     `;
-    const insertResult = await pool.query(insertQuery, [scriptId, ipAddress]);
+    const existing = await pool.query(checkQuery, [scriptId, ipAddress]);
 
-    // 2. If inserted (rowCount > 0), increment views count on scripts table
-    if (insertResult.rowCount > 0) {
-        await pool.query("UPDATE scripts SET views = views + 1 WHERE id = $1", [scriptId]);
-        return true;
+    if (existing.rows.length > 0) {
+        return false; // Already viewed today
     }
 
-    return false;
+    // Insert new view record
+    await pool.query(
+        `INSERT INTO script_views (script_id, ip_address) VALUES ($1, $2)`,
+        [scriptId, ipAddress]
+    );
+
+    // Increment views count on scripts table
+    await pool.query("UPDATE scripts SET views = views + 1 WHERE id = $1", [scriptId]);
+    return true;
 };
 
 /**

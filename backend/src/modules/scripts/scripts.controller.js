@@ -590,6 +590,121 @@ export const getScriptBySlug = async (req, res) => {
 };
 
 /**
+ * Get highly cached public script for loaders
+ * GET /api/scripts/public/:slug (or /v1/scripts/public/:slug)
+ * Cached for 30 minutes (1800s)
+ */
+export const getPublicScriptBySlug = async (req, res) => {
+    try {
+        const { slug } = req.params;
+
+        // Separate cache key for loader API (minimal data)
+        const cacheKey = `cache:script:public:${slug}`;
+        const cachedData = await getCache(cacheKey);
+
+        if (cachedData) {
+            return res.json({
+                success: true,
+                data: cachedData,
+            });
+        }
+
+        // Fetch from DB (no user context, since it's anonymous)
+        const script = await scriptService.getScriptBySlug(slug, null);
+
+        if (!script) {
+            return res.status(404).json({
+                error: "NotFound",
+                message: "Script not found",
+            });
+        }
+
+        // Build the stripped-down object
+        const publicData = {
+            id: script.id,
+            title: script.title,
+            slug: script.slug,
+            owner: script.owner_display_name || script.owner_username,
+            thumbnail_url: script.thumbnail_url ? `https://cdn.scripthub.id/${script.thumbnail_url}` : null,
+            loader_url: script.loader_url,
+        };
+
+        // Cache for 30 minutes (1800 seconds)
+        await setCache(cacheKey, publicData, 1800);
+
+        res.json({
+            success: true,
+            data: publicData,
+        });
+    } catch (error) {
+        logger.error("Get Public Script Error: %o", error);
+        res.status(500).json({
+            error: "ServerError",
+            message: "Failed to fetch public script",
+        });
+    }
+};
+
+/**
+ * Get highly cached paginated scripts for loaders
+ * GET /api/scripts/public?page=1&limit=30&sortBy=trending
+ * Cached for 5 minutes (300s)
+ */
+export const getPublicScripts = async (req, res) => {
+    try {
+        const { tag, query, hubId, sortBy, seed, page = 1, limit = 30 } = req.query;
+        const pageNum = Math.max(1, parseInt(page, 10) || 1);
+        const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 30));
+
+        // Create a unique cache key for the public loader list
+        const cacheKey = `cache:scripts:public:list:${pageNum}:${limitNum}:${tag || ''}:${query || ''}:${hubId || ''}:${sortBy || ''}`;
+
+        const cached = await getCache(cacheKey);
+        if (cached) return res.json(cached);
+
+        // Fetch from DB using the general service method (userId=null)
+        const { rows: scripts, total } = await scriptService.getAllPublishedScripts({
+            tag, query, userId: null, hubId, sortBy, seed,
+            page: pageNum,
+            limit: limitNum,
+        });
+
+        // Strip the data down to just the essentials for loaders
+        const strippedScripts = scripts.map(script => ({
+            id: script.id,
+            title: script.title,
+            slug: script.slug,
+            owner: script.owner_display_name || script.owner_username,
+            thumbnail_url: script.thumbnail_url ? `https://cdn.scripthub.id/${script.thumbnail_url}` : null,
+            loader_url: script.loader_url,
+        }));
+
+        const response = {
+            success: true,
+            data: strippedScripts,
+            pagination: {
+                total,
+                page: pageNum,
+                limit: limitNum,
+                totalPages: Math.ceil(total / limitNum),
+                hasMore: pageNum * limitNum < total,
+            },
+        };
+
+        // Cache anonymous list response for 5 minutes (300 seconds)
+        await setCache(cacheKey, response, 300);
+
+        res.json(response);
+    } catch (error) {
+        logger.error("Get Public Scripts List Error: %o", error);
+        res.status(500).json({
+            error: "ServerError",
+            message: "Failed to fetch public scripts list",
+        });
+    }
+};
+
+/**
  * Get script by ID
  * GET /api/scripts/:id
  */

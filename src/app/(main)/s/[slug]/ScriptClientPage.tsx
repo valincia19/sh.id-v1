@@ -10,6 +10,7 @@ import { CommentSection } from "@/components/scripts/CommentSection";
 import { useUser } from "@/hooks/useUser";
 import { formatRelativeTime } from "@/lib/utils/date";
 import { useAuth } from "@/contexts/AuthContext";
+import { Share2 } from "lucide-react";
 
 const formatYoutubeEmbedUrl = (url: string) => {
     let embedUrl = url;
@@ -144,6 +145,25 @@ export default function ScriptDetailPage() {
             setTimeout(() => setIsCopied(false), 2000);
             // Record copy event (fire-and-forget)
             scriptsApi.recordCopy(script.id);
+        }
+    };
+
+    const handleShare = async () => {
+        const shareData = {
+            title: `${script?.title} on ScriptHub`,
+            text: script?.description || `Check out ${script?.title} on ScriptHub!`,
+            url: window.location.href,
+        };
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                await navigator.clipboard.writeText(window.location.href);
+                alert("Link copied to clipboard!");
+            }
+        } catch (err) {
+            console.error("Error sharing:", err);
         }
     };
 
@@ -359,6 +379,15 @@ export default function ScriptDetailPage() {
                             >
                                 <svg width="11" height="11" viewBox="0 0 24 24" fill={script.isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2"><path d="M19 14c1.49-1.28 3.6-2.33 3.6-5.45C22.6 4.98 19.5 2 15.5 2 13 2 12.33 3.5 12 4.5 11.67 3.5 11 2 8.5 2 4.5 2 1.4 4.98 1.4 8.55c0 3.12 2.11 4.17 3.6 5.45L12 21l7-7z" /></svg>
                                 {script.likes.toLocaleString()}
+                            </button>
+                            <span className="text-offgray-700/50">·</span>
+                            <button
+                                onClick={handleShare}
+                                className="flex items-center gap-1 hover:text-emerald-500 transition-colors"
+                                title="Share script"
+                            >
+                                <Share2 size={11} />
+                                <span>Share</span>
                             </button>
                         </div>
 

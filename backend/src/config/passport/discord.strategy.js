@@ -122,6 +122,20 @@ const findOrCreateDiscordUser = async (profile, accessToken, refreshToken) => {
               [userId, roleResult.rows[0].id]
             );
           }
+
+          // Create default free plan (30-day trial)
+          await client.query(
+            `INSERT INTO user_plans (user_id, plan_type, started_at, expires_at)
+             VALUES ($1, 'free', NOW(), NOW() + INTERVAL '30 days')`,
+            [userId]
+          );
+
+          // Create default maximums for free plan
+          await client.query(
+            `INSERT INTO user_maximums (user_id, maximum_obfuscation, maximum_keys, maximum_deployments, maximum_devices_per_key)
+             VALUES ($1, 3, 10, 50, 1)`,
+            [userId]
+          );
         }
 
         // Create auth provider entry

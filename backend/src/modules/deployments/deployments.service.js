@@ -3,6 +3,7 @@ import crypto from "crypto";
 import s3Client from "../../config/s3.js";
 import config from "../../config/index.js";
 import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { encryptScript, generateLoaderText } from "./protection.service.js";
 
 /**
  * Generate a random deploy key (32 hex chars + .lua)
@@ -76,7 +77,7 @@ export async function getStats(userId) {
  */
 export async function getByDeployKey(deployKey) {
     const result = await pool.query(
-        `SELECT id, s3_key, mime_type, title, status FROM deployments WHERE deploy_key = $1 AND status = 'active'`,
+        `SELECT id, s3_key, script_s3_key, mime_type, title, status FROM deployments WHERE deploy_key = $1 AND status = 'active'`,
         [deployKey]
     );
     return result.rows[0] || null;
@@ -143,6 +144,69 @@ export async function create(userId, { title, content }) {
     );
 
     return result.rows[0];
+}
+
+/**
+ * Create an obfuscated deployment (3-layer architecture).
+ * 1. Encrypts raw script with RC4 → uploads to script/{username}/{deployKey} on S3.
+ * 2. Picks a random loader from the pool → prepends _G globals → uploads to v1/{userId}/{deployKey} on S3.
+ * 3. Inserts DB row with both s3_key (loader) and script_s3_key (encrypted script).
+ *
+ * @param {string} userId - The authenticated user's ID
+ * @param {string} username - The user's username (for S3 path)
+ * @param {object} data - { title, content }
+ * @param {string} cdnBaseUrl - The CDN base URL (e.g. https://v1.scripthub.id)
+ * @returns {object} The deployment row
+ */
+export async function createObfuscated(userId, username, { title, content }, cdnBaseUrl) {
+    const deployKey = generateDeployKey();
+    const shortUserId = userId.substring(0, 8);
+
+    // --- Layer 3: Upload encrypted raw script to hidden folder ---
+    const scriptS3Key = `script/${username}/${deployKey}`;
+    const encryptedContent = encryptScript(content, deployKey);
+    const encryptedBuffer = Buffer.from(encryptedContent, "utf-8");
+
+    await s3Client.send(new PutObjectCommand({
+        Bucket: config.s3.bucketScripts,
+        Key: scriptS3Key,
+        Body: encryptedBuffer,
+        ContentType: "text/plain",
+    }));
+
+    // --- Backup: Upload raw unencrypted script for admin recovery ---
+    const backupS3Key = `script/${username}/backup/${deployKey}`;
+    const rawBuffer = Buffer.from(content, "utf-8");
+
+    await s3Client.send(new PutObjectCommand({
+        Bucket: config.s3.bucketScripts,
+        Key: backupS3Key,
+        Body: rawBuffer,
+        ContentType: "text/plain",
+    }));
+
+    // --- Layer 2: Pick random loader, inject globals, upload to user's CDN path ---
+    const scriptUrl = `${cdnBaseUrl}/${scriptS3Key}`;
+    const loaderContent = generateLoaderText(deployKey, scriptUrl);
+    const loaderBuffer = Buffer.from(loaderContent, "utf-8");
+    const loaderS3Key = `v1/${shortUserId}/${deployKey}`;
+
+    await s3Client.send(new PutObjectCommand({
+        Bucket: config.s3.bucketScripts,
+        Key: loaderS3Key,
+        Body: loaderBuffer,
+        ContentType: "text/plain",
+    }));
+
+    // --- Insert DB row with dual S3 keys ---
+    const result = await pool.query(
+        `INSERT INTO deployments (user_id, title, deploy_key, s3_key, script_s3_key, file_size, mime_type)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING id, title, deploy_key, s3_key, script_s3_key, file_size, mime_type, status, created_at, updated_at`,
+        [userId, title, deployKey, loaderS3Key, scriptS3Key, loaderBuffer.length, "text/plain"]
+    );
+
+    return { ...result.rows[0], loaderText: loaderContent };
 }
 
 /**

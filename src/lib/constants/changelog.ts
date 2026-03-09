@@ -16,70 +16,128 @@ export interface ChangelogRelease {
 
 export const CHANGELOG_DATA: ChangelogRelease[] = [
     {
-        version: "v1.1.0",
-        title: "Full Beta Summary",
-        date: "March 02, 2026",
-        description: "Comprehensive overview of the ScriptHub platform infrastructure, security protocols, and core features implemented during the beta phase.",
+        version: "v1.2.0",
+        title: "Script Protection & Universal Support",
+        date: "March 09, 2026",
+        description: "Major update introducing multi-layer script protection, universal executor compatibility for mobile and desktop, and deployment experience improvements.",
         isLatest: true,
         changes: [
             {
                 category: "Added",
                 items: [
-                    "Creator Studio allowing developers to publish, edit, and manage ROBLOX scripts with markdown-supported descriptions and thumbnails.",
-                    "Hub Management system to group related scripts under dedicated organizational pages.",
-                    "Executor Compatibility tagging system to explicitly declare which executors are supported per script.",
-                    "Comprehensive API ecosystem for fetching trending scripts, searching, and managing user metadata.",
-                    "Admin Dashboard with full CRUD capabilities over Users, Scripts, Hubs, Executors, and Deployments.",
-                    "Official Gateway multi-checkpoint key system tailored to support platform monetization while offering a seamless user experience.",
-                    "YouTube video preview integration (`youtube-nocookie.com/embed/`) for script detail pages to showcase script capabilities.",
-                    "Public Legal pages including comprehensive Terms of Service and Privacy Policy.",
-                    "Responsive Global Footer containing links to resources, legal pages, and official social media (Discord, TikTok, Instagram, X)."
+                    "Multi-layer protection architecture with encrypted script delivery.",
+                    "Polymorphic system: server randomly selects from multiple variants per deployment.",
+                    "Monthly protection quota system with per-plan usage tracking.",
+                    "Real-time usage display showing remaining and total limits.",
+                    "Quick access button after successful protection to view your deployments.",
+                    "Admin panel for managing internal scripts and variants.",
+                    "Automatic compatibility layer for executors that lack certain built-in libraries.",
                 ]
             },
             {
                 category: "Improved",
                 items: [
-                    "Improved loading speeds for the `getfreekey` subdomain with optimized asset delivery.",
-                    "Refined API rate limit headers and reduced latency for initial key verification checks.",
-                    "Redesigned the `getfreekey.scripthub.id` waiting UI with modern gradients, responsive typography, and clear script status indicators.",
-                    "Removed redundant background animations to improve performance on low-end mobile devices.",
-                    "Enhanced visual countdown timers for the Official Gateway checkpoint stages."
-                ]
-            },
-            {
-                category: "Changed",
-                items: [
-                    "Replaced Next.js `<Image>` components with standard `<img>` tags in the Navigation Header and Auth Modal to resolve SVG aspect ratio squishing.",
-                    "Simplified Studio Key Settings by removing hardcoded ad network fields (Linkvertise/Work.ink), allowing creators to input custom direct Key URLs.",
-                    "Extracted static changelog HTML into dynamic TS constants to allow for scalable and maintainable release notes."
+                    "Universal request handling with multi-method fallback for broader support.",
+                    "Universal device identification with multiple detection methods.",
+                    "Safe execution wrapper with fallbacks for restricted environments.",
+                    "Deployment timestamps now show exact date and time.",
+                    "Fresh protection support: get a new variant from the original script at any time.",
                 ]
             },
             {
                 category: "Fixed",
                 items: [
-                    "Fixed \"Get Key\" buttons routing to incorrect URLs (`undefined/[slug]`) by rectifying the backend configuration variables.",
-                    "Resolved a \"429 Too Many Requests\" infinite loop on the Studio `/studio/keys` page caused by a missing dependency array in the React `useEffect` bounds.",
-                    "Fixed SVG logo aspect ratios and resizing behaviors on mobile and tablet viewports."
+                    "Fixed execution errors on mobile executors caused by missing standard libraries.",
+                    "Fixed decryption failures when standard math libraries are unavailable: now uses a built-in fallback.",
+                    "Fixed development mode serving outdated logic without proper error handling.",
+                    "Fixed minor variable issue in authentication flow.",
                 ]
             },
             {
                 category: "Security",
                 items: [
-                    "Integrated advanced bot protection (Cloudflare Turnstile) for Authentication limits and Key System checkpoints.",
-                    "Implemented robust cryptographic signature validation to strictly bind Key System sessions to the user's specific browser and device.",
-                    "Deployed comprehensive Role-Based Access Control (RBAC) to secure all administrative endpoints and actions.",
-                    "Enforced strict backend parameter validation and payload sanitation to prevent code injection and cross-site scripting attacks.",
-                    "Enhanced data protection by ensuring all sensitive credentials are computationally hashed and omitted from backend responses."
+                    "Challenge/verify authentication system for device verification before delivery.",
+                    "Encoded variable injection to prevent exposure of endpoints and keys.",
+                    "Environment detection: only verified executors can access protected content.",
+                    "Automatic cleanup of temporary runtime variables after initialization.",
                 ]
             },
             {
                 category: "Infrastructure",
                 items: [
-                    "Implemented edge routing and middleware to isolate and optimize the secure key generation subdomain.",
-                    "Configured strict Cross-Origin Resource Sharing (CORS) policies to protect internal service communication.",
-                    "Deployed dynamic rate-limiting thresholds across sensitive API endpoints to mitigate brute-force attempts and ensure platform stability.",
-                    "Established a zero-downtime database migration architecture for smooth, uninterrupted platform updates.",
-                    "Optimized the production environment by removing unused backend packages, significantly reducing the server footprint and potential attack surface."
+                    "Short-lived secure links for time-limited access.",
+                    "Server-side compatibility injection: no manual updates needed for new support.",
+                    "Request caching to absorb traffic spikes without overloading services.",
+                    "Automatic deployment usage tracking for analytics.",
+                ]
+            }
+        ]
+    },
+    {
+        version: "v1.1.0",
+        title: "Full Beta Summary",
+        date: "March 02, 2026",
+        description: "Comprehensive overview of the platform infrastructure, security protocols, and core features.",
+        isLatest: false,
+        changes: [
+            {
+                category: "Added",
+                items: [
+                    "Studio features allowing developers to publish and manage content with descriptions and thumbnails.",
+                    "Organization system to group related items under dedicated pages.",
+                    "Compatibility tagging system to declare supported environments.",
+                    "Comprehensive ecosystem for fetching trending items and searching.",
+                    "Admin Dashboard with full management capabilities.",
+                    "Official Gateway multi-checkpoint system for platform support while offering a seamless experience.",
+                    "Video preview integration for detail pages to showcase capabilities.",
+                    "Public Legal pages including Terms of Service and Privacy Policy.",
+                    "Responsive Global Footer containing links to resources and social media."
+                ]
+            },
+            {
+                category: "Improved",
+                items: [
+                    "Improved loading speeds for dedicated subdomains with optimized delivery.",
+                    "Refined rate limit headers and reduced latency for initial verification checks.",
+                    "Redesigned the waiting UI with modern gradients and clear status indicators.",
+                    "Removed redundant background animations to improve performance on low-end devices.",
+                    "Enhanced visual countdown timers for gateway stages."
+                ]
+            },
+            {
+                category: "Changed",
+                items: [
+                    "Replaced specific layout components with standard tags to resolve aspect ratio issues.",
+                    "Simplified settings by removing hardcoded third-party fields, allowing custom direct links.",
+                    "Extracted static data into dynamic constants to allow for scalable release notes."
+                ]
+            },
+            {
+                category: "Fixed",
+                items: [
+                    "Fixed button routing issues by rectifying configuration variables.",
+                    "Resolved infinite loop issues on management pages caused by logic bounds.",
+                    "Fixed logo aspect ratios and resizing behaviors on mobile viewports."
+                ]
+            },
+            {
+                category: "Security",
+                items: [
+                    "Integrated advanced bot protection for authentication limits and checkpoints.",
+                    "Implemented robust signature validation to strictly bind sessions to specific devices.",
+                    "Deployed comprehensive access control to secure all administrative actions.",
+                    "Enforced strict parameter validation and payload sanitation to prevent attacks.",
+                    "Enhanced data protection by ensuring all sensitive credentials are computationally hidden."
+                ]
+            },
+            {
+                category: "Infrastructure",
+                items: [
+                    "Implemented edge routing and middleware to isolate and optimize secure subdomains.",
+                    "Configured strict cross-origin policies to protect internal communication.",
+                    "Deployed dynamic rate-limiting thresholds across sensitive endpoints to ensure stability.",
+                    "Established a zero-downtime migration architecture for smooth updates.",
+                    "Optimized the production environment by removing unused components, significantly reducing the footprint."
                 ]
             }
         ]

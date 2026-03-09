@@ -16,7 +16,7 @@ local Config = {
 
     -- [ Get Key & Socials ] --
     GetKeyLink  = "https://getkey.scripthub.id/vinzhub",                      -- e.g. "https://getkey.scripthub.id/your-slug"
-    DiscordLink = "https://discord.gg/vinzhub"
+    DiscordLink = "https://discord.gg/vinzhub",
 
     -- [ UI Theming (Zinc Palette) ] --
     Colors = {

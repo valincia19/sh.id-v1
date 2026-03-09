@@ -309,7 +309,7 @@ export default function StudioDeploymentsPage() {
                                     </td>
                                     <td className="px-3 py-2.5 whitespace-nowrap hidden sm:table-cell">
                                         <span className="text-[11px] font-mono text-offgray-500">
-                                            {new Date(file.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                            {new Date(file.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                     </td>
                                     <td className="px-3 py-2.5 text-right">
@@ -408,6 +408,49 @@ export default function StudioDeploymentsPage() {
                     </div>
                 </div>
             )}
+            {/* Security Info */}
+            <section className="mt-12 pt-8 border-t border-white/[0.04]">
+                <div className="flex items-center gap-2.5 mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                    </div>
+                    <h2 className="text-lg font-serif text-white">Multi-Layer Protection</h2>
+                </div>
+                <p className="text-sm font-mono text-offgray-500 mb-6 max-w-2xl">
+                    Rest assured, your scripts are safe with us. Our multi-layered protection system ensures maximum security and prevents unauthorized distribution. <Link href="/api-docs" className="text-emerald-500 hover:text-emerald-400 underline underline-offset-4 decoration-emerald-500/30">View technical documentation</Link>
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[
+                        {
+                            title: "Anti-Browser",
+                            desc: "Detects and blocks web browsers and crawlers from accessing raw script content.",
+                            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><circle cx="12" cy="12" r="3" /></svg>
+                        },
+                        {
+                            title: "Executor Only",
+                            desc: "Script content is only served as an encrypted stub for legitimate Roblox executors.",
+                            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>
+                        },
+                        {
+                            title: "HWID Locking",
+                            desc: "Optional hardware verification prevents unauthorized execution and link sharing.",
+                            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>
+                        },
+                        {
+                            title: "Ephemeral URLs",
+                            desc: "Real script content is served via temporary 30-second single-use signed S3 links.",
+                            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                        }
+                    ].map((item, idx) => (
+                        <div key={idx} className="p-5 bg-white/[0.01] border border-white/[0.04] rounded-xl space-y-3">
+                            <div className="text-emerald-500/60">{item.icon}</div>
+                            <h3 className="text-xs font-mono font-bold text-offgray-300 uppercase tracking-widest">{item.title}</h3>
+                            <p className="text-[11px] leading-relaxed text-offgray-500 font-mono italic">{item.desc}</p>
+                        </div>
+                    ))}
+                </div>
+            </section>
         </div>
     );
 }

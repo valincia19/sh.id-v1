@@ -20,6 +20,13 @@ router.post(
     deploymentsController.createDeployment
 );
 
+// Obfuscate (Create deployment + get loader stub)
+router.post(
+    "/obfuscate",
+    deploymentsController.deploymentValidation,
+    deploymentsController.obfuscateDeployment
+);
+
 // Upload physical file
 import upload from "../../middleware/upload.js";
 router.post(

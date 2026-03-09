@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     if (!script) return {};
 
     const rawTitle = script.title || 'Script';
-    const title = `${rawTitle} | ScriptHub`;
+    const title = rawTitle;
     const ownerName = script.ownerUsername || script.owner_username || 'a developer';
     const gameName = script.gameName || script.game_name;
 

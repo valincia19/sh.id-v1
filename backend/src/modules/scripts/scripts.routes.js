@@ -32,6 +32,20 @@ router.get("/trending", optionalAuth, scriptController.getTrendingScripts);
 router.get("/slug/:slug", optionalAuth, scriptController.getScriptBySlug);
 
 /**
+ * @route   GET /api/scripts/public
+ * @desc    Get paginated scripts for loaders (heavily cached, minimal data)
+ * @access  Public
+ */
+router.get("/public", scriptController.getPublicScripts);
+
+/**
+ * @route   GET /api/scripts/public/:slug (or /v1/scripts/public/:slug via reverse proxy)
+ * @desc    Get script by slug for loaders (high cache, minimal data)
+ * @access  Public
+ */
+router.get("/public/:slug", scriptController.getPublicScriptBySlug);
+
+/**
  * @route   GET /api/scripts/me
  * @desc    Get current user's scripts
  * @access  Private
