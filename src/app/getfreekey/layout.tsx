@@ -15,7 +15,7 @@ function AdsterraInjector() {
         const script = document.createElement("script");
         script.id = scriptId;
         script.type = "text/javascript";
-        script.src = `https://pl28803011.effectivegatecpm.com/b0/c4/1c/b0c41c29f6b9de81c3a84a2e77bf5f0c.js?v=${Date.now()}`;
+        script.src = `https://pl28851177.effectivegatecpm.com/f4/e9/2c/f4e92cd0a2f35267373313d721378beb.js`;
         script.async = true;
         document.body.appendChild(script);
 
@@ -58,7 +58,7 @@ function useAdblockCheck(): AdCheckState {
         // Check 2: Our actual ad script load test
         checks.push(new Promise((resolve) => {
             const s = document.createElement("script");
-            s.src = `https://pl28803011.effectivegatecpm.com/b0/c4/1c/b0c41c29f6b9de81c3a84a2e77bf5f0c.js?t=${Date.now()}`;
+            s.src = `https://pl28851177.effectivegatecpm.com/f4/e9/2c/f4e92cd0a2f35267373313d721378beb.js`;
             s.async = true;
             let ok = false;
             s.onload = () => { ok = true; };
