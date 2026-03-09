@@ -85,8 +85,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
             type: 'website',
             images: [{
                 url: finalImageUrl,
-                width: 1200,
-                height: 630,
                 alt: `${rawName} — ScriptHub`,
             }],
             siteName: 'ScriptHub',
