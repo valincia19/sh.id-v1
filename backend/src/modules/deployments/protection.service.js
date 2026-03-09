@@ -12,7 +12,7 @@ import logger from "../../utils/logger.js";
 // Token / HMAC helpers
 // ============================================
 
-const SECRET = config.jwtSecret || "scripthub-protection-secret";
+const SECRET = config.jwt.secret;
 
 /**
  * Generate a one-time token for HWID verification.
@@ -191,6 +191,7 @@ export function generateStub(deployKey, apiBaseUrl) {
     // Fallback: plain text stub (for development/testing when no obfuscated file exists)
     logger.warn("Serving PLAIN TEXT stub for %s — obfuscate stub.lua with Luraph for production!", deployKey);
     return `${prepend}
+local function sh_log(msg) pcall(function() warn("[ScriptHub] "..msg) end) end
 local function http_get(url)
     local ok, res = pcall(function() return game:HttpGet(url) end)
     if ok and res then return res end
@@ -220,19 +221,23 @@ local API_BASE = _G.__SH_API
 local DEPLOY_KEY = _G.__SH_KEY
 _G.__SH_API = nil
 _G.__SH_KEY = nil
-if not API_BASE or not DEPLOY_KEY then return end
+if not API_BASE or not DEPLOY_KEY then sh_log("Error: Missing globals") return end
 local hwid = get_hwid()
 local cRes = http_get(API_BASE.."/v1/challenge?key="..DEPLOY_KEY.."&hwid="..hwid)
-if not cRes then return end
+if not cRes then sh_log("Error: Challenge fetch failed") return end
 local ok, cData = pcall(function() return HttpService:JSONDecode(cRes) end)
-if not ok or not cData or not cData.token then return end
+if not ok or not cData then sh_log("Error: Challenge decode failed") return end
+if not cData.token then sh_log("Error: Challenge denied — "..(cData.error or "unknown")) return end
 local vRes = http_get(API_BASE.."/v1/verify?key="..DEPLOY_KEY.."&hwid="..hwid.."&ts="..cData.ts.."&token="..cData.token)
-if not vRes then return end
+if not vRes then sh_log("Error: Verify fetch failed") return end
 local vok, vData = pcall(function() return HttpService:JSONDecode(vRes) end)
-if not vok or not vData then return end
+if not vok or not vData then sh_log("Error: Verify decode failed") return end
+if vData.error then sh_log("Error: Verify denied — "..vData.error) return end
 if vData.loaderUrl then
     local lc = http_get(vData.loaderUrl)
-    if lc then local fn = _loadstring(lc); if fn then fn() end end
+    if not lc then sh_log("Error: Loader fetch failed") return end
+    local fn, err = _loadstring(lc)
+    if fn then fn() else sh_log("Error: Loader load failed — "..tostring(err)) end
 elseif vData.payload then
     local function bxor_fb(a,b) local r=0; for i=0,7 do local x,y=a%2,b%2; if x~=y then r=r+2^i end; a=math.floor(a/2); b=math.floor(b/2) end; return r end
     local bxor = (bit32 and bit32.bxor) or (bit and bit.bxor) or bxor_fb
@@ -245,8 +250,11 @@ elseif vData.payload then
         return table.concat(out)
     end
     local sok, dec = pcall(function() return rc4(DEPLOY_KEY, vData.payload) end)
-    if sok and dec then local fn = _loadstring(dec); if fn then fn() end end
-end
+    if sok and dec then
+        local fn, err = _loadstring(dec)
+        if fn then fn() else sh_log("Error: Script load failed — "..tostring(err)) end
+    else sh_log("Error: RC4 decryption failed") end
+else sh_log("Error: No loaderUrl or payload in response") end
 `;
 }
 

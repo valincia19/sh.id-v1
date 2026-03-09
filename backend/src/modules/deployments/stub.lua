@@ -1,5 +1,5 @@
 -- ============================================
--- ScriptHub Protected Loader Stub v4
+-- ScriptHub Protected Loader Stub v5
 -- ============================================
 -- 3-Layer Architecture:
 --   Layer 1 (this file): Auth + fetch loader
@@ -10,6 +10,19 @@
 --   _G.__SH_API = "https://api.scripthub.id"
 --   _G.__SH_KEY = "deploy_key.lua"
 -- ============================================
+
+-- ========== Debug Logger ==========
+local function sh_log(msg)
+    local ok, _ = pcall(function()
+        if rconsoleprint then
+            rconsoleprint("[ScriptHub] " .. msg .. "\n")
+        elseif printconsole then
+            printconsole("[ScriptHub] " .. msg)
+        end
+    end)
+    -- Also try warn() which works on most executors
+    pcall(function() warn("[ScriptHub] " .. msg) end)
+end
 
 -- ========== Universal HTTP Request ==========
 local function http_get(url)
@@ -101,6 +114,7 @@ _G.__SH_API = nil
 _G.__SH_KEY = nil
 
 if not API_BASE or not DEPLOY_KEY then
+    sh_log("Error: Missing API_BASE or DEPLOY_KEY globals")
     return
 end
 
@@ -112,6 +126,7 @@ local challengeUrl = API_BASE .. "/v1/challenge?key=" .. DEPLOY_KEY .. "&hwid=" 
 local challengeRes = http_get(challengeUrl)
 
 if not challengeRes then
+    sh_log("Error: Failed to fetch challenge (network error or HttpGet blocked)")
     return
 end
 
@@ -121,7 +136,13 @@ local ok, challengeData = pcall(function()
     return HttpService:JSONDecode(challengeRes)
 end)
 
-if not ok or not challengeData or not challengeData.token then
+if not ok or not challengeData then
+    sh_log("Error: Failed to decode challenge response")
+    return
+end
+
+if not challengeData.token then
+    sh_log("Error: Challenge denied — " .. (challengeData.error or "unknown"))
     return
 end
 
@@ -130,6 +151,7 @@ local verifyUrl = API_BASE .. "/v1/verify?key=" .. DEPLOY_KEY .. "&hwid=" .. hwi
 local verifyRes = http_get(verifyUrl)
 
 if not verifyRes then
+    sh_log("Error: Failed to fetch verify endpoint")
     return
 end
 
@@ -138,6 +160,12 @@ local vok, verifyData = pcall(function()
 end)
 
 if not vok or not verifyData then
+    sh_log("Error: Failed to decode verify response")
+    return
+end
+
+if verifyData.error then
+    sh_log("Error: Verify denied — " .. verifyData.error)
     return
 end
 
@@ -146,11 +174,16 @@ if verifyData.loaderUrl then
     -- 3-Layer: Fetch and execute the loader (which will decrypt the real script)
     local loaderContent = http_get(verifyData.loaderUrl)
 
-    if loaderContent then
-        local fn, err = _loadstring(loaderContent)
-        if fn then
-            fn()
-        end
+    if not loaderContent then
+        sh_log("Error: Failed to fetch loader from signed URL")
+        return
+    end
+
+    local fn, err = _loadstring(loaderContent)
+    if fn then
+        fn()
+    else
+        sh_log("Error: Failed to load loader — " .. tostring(err))
     end
 elseif verifyData.payload then
     -- Regular deployment: Decrypt RC4 payload directly
@@ -190,6 +223,12 @@ elseif verifyData.payload then
         local fn, err = _loadstring(decrypted)
         if fn then
             fn()
+        else
+            sh_log("Error: Failed to load decrypted script — " .. tostring(err))
         end
+    else
+        sh_log("Error: RC4 decryption failed — " .. tostring(decrypted))
     end
+else
+    sh_log("Error: Verify response has neither loaderUrl nor payload")
 end

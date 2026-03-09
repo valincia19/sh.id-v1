@@ -70,6 +70,7 @@ const config = {
   // Server
   port: requireEnv('API_PORT', 'number'),
   apiUrl: requireEnv('API_URL'),
+  cdnBaseUrl: optionalEnv('CDN_BASE_URL', ''),
 
   // Frontend
   frontendUrl: requireEnv('FRONTEND_URL'),

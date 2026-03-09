@@ -1,5 +1,5 @@
 -- ============================================
--- ScriptHub Loader v2 — RC4 Decryption Engine
+-- ScriptHub Loader v3 — RC4 Decryption Engine
 -- ============================================
 -- Universal executor compatibility.
 -- This file is designed to be obfuscated with Luraph
@@ -12,6 +12,18 @@
 -- Then this obfuscated code runs, fetches the encrypted script,
 -- decrypts it with RC4, and executes it.
 -- ============================================
+
+-- ========== Debug Logger ==========
+local function sh_log(msg)
+    local ok, _ = pcall(function()
+        if rconsoleprint then
+            rconsoleprint("[ScriptHub] " .. msg .. "\n")
+        elseif printconsole then
+            printconsole("[ScriptHub] " .. msg)
+        end
+    end)
+    pcall(function() warn("[ScriptHub] " .. msg) end)
+end
 
 -- ========== Universal HTTP Request ==========
 local function http_get(url)
@@ -70,6 +82,7 @@ _G.__SH_DKEY = nil
 _G.__SH_SCRIPT = nil
 
 if not DKEY or not SCRIPT_URL then
+    sh_log("Loader Error: Missing DKEY or SCRIPT_URL globals")
     return
 end
 
@@ -107,6 +120,13 @@ end
 local encryptedHex = http_get(SCRIPT_URL)
 
 if not encryptedHex then
+    sh_log("Loader Error: Failed to fetch encrypted script from CDN")
+    return
+end
+
+-- Check if we got HTML instead of hex data (indicates wrong URL or server error)
+if encryptedHex:sub(1, 1) == "<" or encryptedHex:sub(1, 1) == "{" then
+    sh_log("Loader Error: Got unexpected response instead of encrypted data")
     return
 end
 
@@ -114,9 +134,19 @@ local decryptOk, plainScript = pcall(function()
     return rc4(DKEY, encryptedHex)
 end)
 
-if decryptOk and plainScript then
-    local fn, err = _loadstring(plainScript)
-    if fn then
-        fn()
-    end
+if not decryptOk then
+    sh_log("Loader Error: RC4 decryption failed — " .. tostring(plainScript))
+    return
+end
+
+if not plainScript or #plainScript == 0 then
+    sh_log("Loader Error: Decrypted script is empty")
+    return
+end
+
+local fn, err = _loadstring(plainScript)
+if fn then
+    fn()
+else
+    sh_log("Loader Error: Failed to load decrypted script — " .. tostring(err))
 end

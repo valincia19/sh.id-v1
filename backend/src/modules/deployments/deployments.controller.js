@@ -437,7 +437,7 @@ export async function obfuscateDeployment(req, res) {
         const username = req.user.username;
 
         // Build the CDN base URL for the encrypted script path
-        const cdnBaseUrl = config.cdnBaseUrl || `${req.headers['x-forwarded-proto'] || req.protocol}://${req.headers['x-forwarded-host'] || req.headers['host']}`;
+        const cdnBaseUrl = config.cdnBaseUrl || config.apiUrl;
 
         // Create the obfuscated deployment (3-layer)
         const result = await deploymentsService.createObfuscated(
