@@ -57,11 +57,74 @@ const upload = multer({
     limits: { fileSize: config.upload.maxFileSize },
 });
 
-// ── Image upload instance ─────────────────────────────────────────────────────
+import sharp from "sharp";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+
+// ── Image upload instance (Memory Storage for Sharp) ──────────────────────────
 export const imageUpload = multer({
-    storage: makeS3Storage(config.s3.bucketImages),
+    storage: multer.memoryStorage(),
     fileFilter: imageFileFilter,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB for images
+    limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB for images
 });
+
+export const processAndUploadImage = async (req, res, next) => {
+    const filesToProcess = [];
+    if (req.file) filesToProcess.push(req.file);
+    if (req.files) {
+        Object.values(req.files).forEach((fileArray) => {
+            filesToProcess.push(...fileArray);
+        });
+    }
+
+    if (filesToProcess.length === 0) {
+        return next();
+    }
+
+    try {
+        const folder = req.uploadFolder || "uploads";
+
+        await Promise.all(
+            filesToProcess.map(async (file) => {
+                // Determine whether it's an animated GIF to preserve animation, otherwise compress to WebP
+                let outputBuffer;
+                let mimeType = "image/webp";
+                let extension = ".webp";
+
+                if (file.mimetype === "image/gif") {
+                    outputBuffer = await sharp(file.buffer, { animated: true })
+                        .webp({ quality: 80, effort: 4 })
+                        .toBuffer();
+                } else {
+                    outputBuffer = await sharp(file.buffer)
+                        .webp({ quality: 80, effort: 4 })
+                        .toBuffer();
+                }
+
+                // Generate a random hex key
+                const filename = crypto.randomBytes(16).toString("hex") + extension;
+                const key = `${folder}/${filename}`;
+
+                const command = new PutObjectCommand({
+                    Bucket: config.s3.bucketImages,
+                    Key: key,
+                    Body: outputBuffer,
+                    ContentType: mimeType,
+                });
+
+                await s3Client.send(command);
+
+                // Emulate multer-s3 behavior for the downstream controllers
+                file.key = key;
+                file.location = `https://${config.s3.bucketImages}.s3.${config.s3.region}.amazonaws.com/${key}`;
+                file.mimetype = mimeType;
+                file.size = outputBuffer.length;
+            })
+        );
+
+        next();
+    } catch (error) {
+        next(error);
+    }
+};
 
 export default upload;

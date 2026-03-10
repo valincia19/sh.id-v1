@@ -34,7 +34,7 @@ export const validateKey = async (req, res) => {
             executorName: executor || null,
             robloxUsername: robloxUsername || null,
             robloxUserId: robloxUserId ? parseInt(robloxUserId, 10) : null,
-            ipAddress: req.headers["x-forwarded-for"] || req.socket?.remoteAddress || null
+            ipAddress: (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket?.remoteAddress || null
         });
 
         logger.info(`Key validation: "${key.substring(0, 10)}..." → ${result.valid ? "VALID" : "INVALID"}`);

@@ -54,7 +54,7 @@ export function ScriptForm({ initialData, hubs, deployments = [], onSubmit, isEd
     const [hasKeySystem, setHasKeySystem] = useState(initialData?.hasKeySystem || false);
     const [keySystemUrl, setKeySystemUrl] = useState(initialData?.keySystemUrl || "");
     const [keySystemMode, setKeySystemMode] = useState<'builtin' | 'manual'>(initialData?.keySystemMode || 'builtin');
-    const [useLoader, setUseLoader] = useState(initialData?.useLoader !== false);
+    const [useLoader, setUseLoader] = useState(initialData?.loaderUrl ? true : (!isEditMode));
     const [loaderMode, setLoaderMode] = useState<'deployment' | 'custom'>(initialData?.loaderMode || 'custom');
     const [selectedDeploymentId, setSelectedDeploymentId] = useState(initialData?.selectedDeploymentId || "");
     const [isDeployDropdownOpen, setIsDeployDropdownOpen] = useState(false);
@@ -72,18 +72,20 @@ export function ScriptForm({ initialData, hubs, deployments = [], onSubmit, isEd
 
     // API URL for deployment loadstring (matches deployments page copy URL)
     const apiBaseUrl = envConfig.apiUrl;
-    const getDeploymentLoaderCode = (deployKey: string) =>
-        `loadstring(game:HttpGet('${apiBaseUrl}/v1/${deployKey}'))()`;
+    const getDeploymentLoaderCode = (deployKey: string, withKey: boolean) => {
+        const base = `loadstring(game:HttpGet('${apiBaseUrl}/v1/${deployKey}'))()`;
+        return withKey ? `script_key = "YOUR_KEY"\n${base}` : base;
+    };
 
     // Auto-set loaderUrl when deployment is selected
     useEffect(() => {
         if (loaderMode === 'deployment' && selectedDeploymentId) {
             const dep = deployments.find(d => d.id === selectedDeploymentId);
             if (dep) {
-                setLoaderUrl(getDeploymentLoaderCode(dep.deploy_key));
+                setLoaderUrl(getDeploymentLoaderCode(dep.deploy_key, hasKeySystem));
             }
         }
-    }, [loaderMode, selectedDeploymentId, deployments]);
+    }, [loaderMode, selectedDeploymentId, deployments, hasKeySystem]);
 
     // Auto-set keySystemUrl placeholder when switching to builtin mode
     useEffect(() => {
@@ -158,7 +160,7 @@ export function ScriptForm({ initialData, hubs, deployments = [], onSubmit, isEd
             await onSubmit({
                 title,
                 description,
-                loaderUrl: useLoader ? loaderUrl : undefined,
+                loaderUrl: useLoader ? loaderUrl : "",
                 tags: tagsList,
                 gamePlatformId,
                 hubId: selectedHubId,
@@ -614,7 +616,7 @@ export function ScriptForm({ initialData, hubs, deployments = [], onSubmit, isEd
                                         {selectedDeploymentId && loaderUrl && (
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-mono text-offgray-500 uppercase tracking-widest block">Generated Loadstring</label>
-                                                <div className="w-full px-4 py-3 bg-[#0a0c10] border border-white/[0.04] rounded-lg text-sm font-mono tracking-tight text-[#10B981] shadow-inner break-all leading-relaxed">
+                                                <div className="w-full px-4 py-3 bg-[#0a0c10] border border-white/[0.04] rounded-lg text-sm font-mono tracking-tight text-[#10B981] shadow-inner break-all leading-relaxed whitespace-pre-wrap">
                                                     {loaderUrl}
                                                 </div>
                                             </div>

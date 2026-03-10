@@ -16,11 +16,44 @@ export interface ChangelogRelease {
 
 export const CHANGELOG_DATA: ChangelogRelease[] = [
     {
+        version: "v1.2.1",
+        title: "Studio Improvements & Bug Fixes",
+        date: "March 10, 2026",
+        description: "Resolved critical state management issues in the Studio's script publishing flow.",
+        isLatest: true,
+        changes: [
+            {
+                category: "Added",
+                items: [
+                    "Studio auto-prepends `script_key = \"YOUR_KEY\"` to the deployment loadstring preview when key validation is enabled.",
+                    "Backend automatic image processing: All uploads (avatars, thumbnails, banners) are now automatically converted to WebP and compressed for faster load times.",
+                ]
+            },
+            {
+                category: "Improved",
+                items: [
+                    "Studio editing screen now accurately hydrates its toggles based on whether a script previously utilized a deployment loader.",
+                    "Increased image upload limit to 20MB to accommodate high-resolution original assets before server-side compression.",
+                ]
+            },
+            {
+                category: "Fixed",
+                items: [
+                    "Resolved a backend omission that caused all newly created scripts to default to 'Draft' status regardless of user selection.",
+                    "Resolved an issue where disabling the 'Include Loader' toggle failed to actually clear the loader URL from the database.",
+                    "Fixed Studio 'Script Views' chart rendering where bars would appear empty due to CSS height resolution issues.",
+                    "Corrected chart date alignment to use local browser time, ensuring analytic accuracy across different timezones.",
+                    "Fixed critical `removeChild` hydration error on public script pages caused by DOM mutations from browser extensions.",
+                ]
+            }
+        ]
+    },
+    {
         version: "v1.2.0",
         title: "Script Protection & Universal Support",
         date: "March 09, 2026",
         description: "Major update introducing multi-layer script protection, universal executor compatibility for mobile and desktop, and deployment experience improvements.",
-        isLatest: true,
+        isLatest: false,
         changes: [
             {
                 category: "Added",

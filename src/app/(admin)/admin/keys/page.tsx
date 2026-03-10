@@ -103,6 +103,7 @@ export default function AdminKeysPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+    const [isClearing, setIsClearing] = useState(false);
 
     const load = useCallback(async (q: string, status: string) => {
         setIsLoading(true);
@@ -140,20 +141,49 @@ export default function AdminKeysPage() {
         } catch { alert("Failed to revoke key."); }
     };
 
+    const handleClearExpired = async () => {
+        if (!confirm("Are you sure you want to permanently delete all expired keys older than 7 days? This action cannot be undone.")) return;
+        setIsClearing(true);
+        try {
+            const r = await apiClient.delete(`/admin/keys/expired`);
+            const deletedCount = r.data?.data?.deleted_count || 0;
+            alert(`Successfully deleted ${deletedCount} expired keys.`);
+            load(search, activeTab); // Refresh table
+        } catch (err: any) {
+            alert(err.response?.data?.message || "Failed to clear expired keys.");
+        } finally {
+            setIsClearing(false);
+        }
+    };
+
     const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString("id-ID") : "-";
     const isExpired = (d: string | null) => d ? new Date(d) < new Date() : false;
 
     return (
         <div className="space-y-5 pb-20 animate-in fade-in duration-500" onClick={() => setOpenMenuId(null)}>
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-serif text-white">License Key Management</h1>
                     <p className="text-sm text-offgray-500 mt-1 font-mono">{isLoading ? "Loading…" : `${total} keys`}</p>
                 </div>
-                <input type="text" placeholder="Search key, owner, script…" value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[13px] text-offgray-200 placeholder-offgray-600 outline-none focus:border-rose-500/30 transition-all w-64" />
+                <div className="flex flex-wrap items-center gap-3">
+                    <button
+                        onClick={handleClearExpired}
+                        disabled={isClearing}
+                        className="h-9 px-4 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[13px] font-medium hover:bg-rose-500/20 hover:text-rose-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                        {isClearing ? (
+                            <div className="w-4 h-4 border-2 border-rose-400/30 border-t-rose-400 rounded-full animate-spin" />
+                        ) : (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
+                        )}
+                        Clear Expired &gt; 7d
+                    </button>
+                    <input type="text" placeholder="Search key, owner, script…" value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[13px] text-offgray-200 placeholder-offgray-600 outline-none focus:border-rose-500/30 transition-all w-64" />
+                </div>
             </div>
 
             {/* Tabs */}

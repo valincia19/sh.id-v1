@@ -1,7 +1,7 @@
 import express from "express";
 import * as executorController from "./executors.controller.js";
 import { authenticate, optionalAuth } from "../../middleware/auth.js";
-import { imageUpload } from "../../middleware/upload.js";
+import { imageUpload, processAndUploadImage } from "../../middleware/upload.js";
 
 const router = express.Router();
 
@@ -32,6 +32,7 @@ router.post(
         { name: "logo", maxCount: 1 },
         { name: "banner", maxCount: 1 },
     ]),
+    processAndUploadImage,
     executorController.createExecutorValidation,
     executorController.createExecutor
 );
@@ -48,6 +49,7 @@ router.patch(
         { name: "logo", maxCount: 1 },
         { name: "banner", maxCount: 1 },
     ]),
+    processAndUploadImage,
     executorController.updateExecutorValidation,
     executorController.updateExecutor
 );

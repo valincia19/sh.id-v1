@@ -23,10 +23,10 @@ export const validateKey = async ({ keyValue, scriptId, hwid, executorName, robl
 
         // 1. Look up the key
         const keyResult = await client.query(
-            `SELECT lk.*, s.title as script_title
+            `SELECT lk.*, s.title as script_title, (lk.expires_at < NOW()) as is_expired_db
              FROM license_keys lk
              JOIN scripts s ON lk.script_id = s.id
-             WHERE lk.key_value = $1`,
+             WHERE LOWER(lk.key_value) = LOWER($1)`,
             [keyValue]
         );
 
@@ -59,7 +59,7 @@ export const validateKey = async ({ keyValue, scriptId, hwid, executorName, robl
         }
 
         // 4. Check expiry for timed keys
-        if (key.expires_at && new Date(key.expires_at) < new Date()) {
+        if (key.expires_at && key.is_expired_db) {
             await client.query(`UPDATE license_keys SET status = 'expired' WHERE id = $1`, [key.id]);
             await logExecution(key.id, false, "Key has expired.");
             await client.query("COMMIT");

@@ -383,7 +383,12 @@ export default function StudioOverviewPage() {
             const days = Array.from({ length: numDays }, (_, i) => {
               const d = new Date();
               d.setDate(d.getDate() - (numDays - 1 - i));
-              return d.toISOString().split("T")[0];
+
+              // Use local timezone formatting (YYYY-MM-DD) instead of UTC toISOString()
+              const year = d.getFullYear();
+              const month = String(d.getMonth() + 1).padStart(2, '0');
+              const day = String(d.getDate()).padStart(2, '0');
+              return `${year}-${month}-${day}`;
             });
             const chartData = days.map((date) => {
               const entry = scriptStats?.viewsHistory?.find((h) => h.date === date);
@@ -391,10 +396,15 @@ export default function StudioOverviewPage() {
             });
             const maxViews = Math.max(...chartData.map((d) => d.views), 1);
             return chartData.map((d) => (
-              <div key={d.date} className="w-full bg-[#11141A] rounded-t-[2px] relative group/bar flex flex-col justify-end group-hover/chart:bg-white/[0.02]" style={{ minWidth: numDays > 10 ? '2px' : undefined }}>
-                <div style={{ height: `${Math.max((d.views / maxViews) * 100, 1)}%` }} className="w-full bg-[#059669] group-hover/bar:bg-[#10B981] transition-all duration-300 rounded-t-[2px]">
-                  <div className="absolute -top-9 left-1/2 -translate-x-1/2 bg-[#1a1d21] border border-white/[0.08] px-2 py-1 rounded text-[11px] font-mono text-white opacity-0 group-hover/bar:opacity-100 pointer-events-none whitespace-nowrap z-10">
-                    {d.views.toLocaleString()} views
+              <div key={d.date} className="h-full flex-1 bg-white/[0.02] rounded-t-[2px] relative group/bar flex flex-col justify-end hover:bg-white/[0.04] transition-colors" style={{ minWidth: numDays > 10 ? '1px' : '4px' }}>
+                <div
+                  style={{ height: `${Math.max((d.views / maxViews) * 100, 2)}%` }}
+                  className="w-full bg-emerald-500/40 group-hover/bar:bg-emerald-400/60 transition-all duration-300 rounded-t-[2px] relative"
+                >
+                  {/* Tooltip */}
+                  <div className="absolute -top-9 left-1/2 -translate-x-1/2 bg-[#1a1d21] border border-white/[0.08] px-2 py-1 rounded text-[10px] font-mono text-white opacity-0 group-hover/bar:opacity-100 pointer-events-none whitespace-nowrap z-20 shadow-xl transition-opacity">
+                    <span className="text-emerald-400 font-bold">{d.views.toLocaleString()}</span> views
+                    <div className="text-[8px] text-offgray-500 mt-0.5">{d.date}</div>
                   </div>
                 </div>
               </div>
@@ -410,7 +420,7 @@ export default function StudioOverviewPage() {
             const labelCount = Math.min(numDays, 7);
             const step = Math.max(1, Math.floor((numDays - 1) / (labelCount - 1)));
             return Array.from({ length: labelCount }, (_, i) => {
-              const offset = numDays <= 7 ? i : i * step;
+              const offset = Math.min(numDays - 1, i * step);
               const d = new Date();
               d.setDate(d.getDate() - (numDays - 1 - offset));
               return <span key={i}>{d.toLocaleDateString("en-US", numDays <= 7 ? { weekday: "short" } : { month: "short", day: "numeric" })}</span>;

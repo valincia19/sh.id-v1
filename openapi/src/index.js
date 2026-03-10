@@ -20,8 +20,8 @@ const app = express();
 // ============================================
 // Proxy Configuration
 // ============================================
-// Secure proxy trust limit to loopback (Nginx) to prevent IP spoofing via X-Forwarded-For
-app.set("trust proxy", "loopback, linklocal, uniquelocal");
+// Trust the first proxy hop (Nginx) to ensure rate limiters see the real client IP, not the Nginx internal IP.
+app.set("trust proxy", 1);
 
 // ============================================
 // Security Middleware

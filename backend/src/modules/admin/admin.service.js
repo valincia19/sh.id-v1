@@ -623,5 +623,19 @@ export const updateUserPlan = async (planId, planType, expiresAt = null, customM
         [plan.user_id, obsMax, keyMax, devMax, devPerKey]
     );
 
+
     return plan;
+};
+
+/**
+ * Delete all expired keys older than 7 days
+ */
+export const deleteExpiredKeys = async () => {
+    const result = await pool.query(`
+        DELETE FROM license_keys 
+        WHERE status = 'expired' 
+          AND expires_at < NOW() - INTERVAL '7 days'
+        RETURNING id
+    `);
+    return { deleted_count: result.rowCount };
 };

@@ -2,7 +2,7 @@ import express from "express";
 import * as hubController from "./hubs.controller.js";
 import { authenticate, optionalAuth } from "../../middleware/auth.js";
 import { checkPermission } from "../../middleware/rbac.js";
-import { imageUpload } from "../../middleware/upload.js";
+import { imageUpload, processAndUploadImage } from "../../middleware/upload.js";
 
 const router = express.Router();
 
@@ -33,6 +33,7 @@ router.post(
         { name: "banner", maxCount: 1 },
         { name: "logo", maxCount: 1 },
     ]),
+    processAndUploadImage,
     hubController.createHubValidation,
     hubController.createHub
 );
@@ -55,6 +56,7 @@ router.patch(
         { name: "banner", maxCount: 1 },
         { name: "logo", maxCount: 1 },
     ]),
+    processAndUploadImage,
     hubController.updateHubValidation,
     hubController.updateHub
 );

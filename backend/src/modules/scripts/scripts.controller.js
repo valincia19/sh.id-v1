@@ -139,7 +139,7 @@ export const createScript = async (req, res) => {
 
         const {
             title, description, loaderUrl, hubId, gamePlatformId, tags,
-            isPaid, purchaseUrl, hasKeySystem, keySystemUrl, youtubeUrl
+            isPaid, purchaseUrl, hasKeySystem, keySystemUrl, youtubeUrl, status
         } = req.body;
         const ownerId = req.user.userId;
 
@@ -207,6 +207,7 @@ export const createScript = async (req, res) => {
             hasKeySystem: hasKeySystem === true || hasKeySystem === 'true',
             keySystemUrl,
             youtubeUrl,
+            status,
         });
 
         // 5. Handle Tags

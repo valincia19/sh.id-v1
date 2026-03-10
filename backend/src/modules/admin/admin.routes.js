@@ -51,6 +51,7 @@ router.get("/deployments", adminController.getDeployments);
 router.delete("/deployments/:id", adminController.deleteDeployment);
 
 router.get("/keys", adminController.getKeys);
+router.delete("/keys/expired", adminController.deleteExpiredKeys);
 router.delete("/keys/:id", adminController.deleteKey);
 
 router.get("/hubs", checkPermission('hubs.read'), adminController.getHubs);

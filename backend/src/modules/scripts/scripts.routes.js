@@ -2,7 +2,7 @@ import express from "express";
 import * as scriptController from "./scripts.controller.js";
 import { authenticate, optionalAuth } from "../../middleware/auth.js";
 import { checkPermission } from "../../middleware/rbac.js";
-import upload, { imageUpload } from "../../middleware/upload.js";
+import upload, { imageUpload, processAndUploadImage } from "../../middleware/upload.js";
 
 const router = express.Router();
 
@@ -75,6 +75,7 @@ router.post(
     imageUpload.fields([
         { name: "thumbnail", maxCount: 1 },
     ]),
+    processAndUploadImage,
     scriptController.createScriptValidation,
     scriptController.createScript
 );
@@ -95,6 +96,7 @@ router.patch(
     imageUpload.fields([
         { name: "thumbnail", maxCount: 1 },
     ]),
+    processAndUploadImage,
     scriptController.updateScriptValidation,
     scriptController.updateScript
 );

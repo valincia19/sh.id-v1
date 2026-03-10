@@ -130,7 +130,7 @@ export default async function ScriptPage({ params }: { params: Promise<{ slug: s
     } : null;
 
     return (
-        <>
+        <main className="w-full flex flex-col flex-1">
             {jsonLd && (
                 <script
                     type="application/ld+json"
@@ -140,6 +140,6 @@ export default async function ScriptPage({ params }: { params: Promise<{ slug: s
             <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]"><span className="loading loading-spinner loading-lg text-emerald-500"></span></div>}>
                 <ScriptClientPage />
             </Suspense>
-        </>
+        </main>
     );
 }

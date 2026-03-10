@@ -2,7 +2,7 @@ import express from "express";
 import passport from "passport";
 import * as authController from "./auth.controller.js";
 import { authenticate, optionalAuth } from "../../middleware/auth.js";
-import { imageUpload } from "../../middleware/upload.js";
+import { imageUpload, processAndUploadImage } from "../../middleware/upload.js";
 import { authLimiter, refreshLimiter } from "../../middleware/rateLimiters.js";
 import config from "../../config/index.js";
 import logger from "../../utils/logger.js";
@@ -74,6 +74,7 @@ router.post(
   authenticate,
   (req, res, next) => { req.uploadFolder = 'avatars'; next(); },
   imageUpload.single('avatar'),
+  processAndUploadImage,
   authController.uploadAvatar
 );
 

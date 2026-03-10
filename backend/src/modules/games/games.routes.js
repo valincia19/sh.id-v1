@@ -1,7 +1,7 @@
 import express from "express";
 import * as gameController from "./games.controller.js";
 import { authenticate } from "../../middleware/auth.js";
-import { imageUpload } from "../../middleware/upload.js";
+import { imageUpload, processAndUploadImage } from "../../middleware/upload.js";
 
 const router = express.Router();
 
@@ -49,6 +49,7 @@ router.post(
         { name: "logo", maxCount: 1 },
         { name: "banner", maxCount: 1 },
     ]),
+    processAndUploadImage,
     gameController.createGameValidation,
     gameController.createGame
 );

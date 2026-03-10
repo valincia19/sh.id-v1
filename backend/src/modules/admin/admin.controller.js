@@ -442,3 +442,17 @@ export const updateStubRaw = async (req, res) => {
         res.status(500).json({ error: "ServerError", message: "Failed to update raw stub file" });
     }
 };
+
+/**
+ * DELETE /api/admin/keys/expired
+ * Deletes all expired keys older than 7 days
+ */
+export const deleteExpiredKeys = async (req, res) => {
+    try {
+        const result = await adminService.deleteExpiredKeys();
+        res.json({ success: true, data: result, message: `Successfully deleted ${result.deleted_count} expired keys.` });
+    } catch (error) {
+        logger.error('Admin deleteExpiredKeys error: %o', error);
+        res.status(500).json({ error: 'ServerError', message: 'Failed to clear expired keys' });
+    }
+};
