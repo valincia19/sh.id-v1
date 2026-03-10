@@ -41,7 +41,6 @@ export const validateKey = async ({ keyValue, scriptId, hwid, executorName, robl
 
         // 2. Check if key belongs to the correct script
         if (scriptId && key.script_id !== scriptId) {
-            console.log(`[DEBUG] Script mismatch → received: "${scriptId}" | expected: "${key.script_id}" | key: "${keyValue.substring(0, 10)}..." | placeId: ${placeId}`);
             await logExecution(key.id, false, "Key does not belong to this script.");
             await client.query("COMMIT");
             return {
