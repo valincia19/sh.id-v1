@@ -38,7 +38,8 @@ export const validateKey = async (req, res) => {
             ipAddress: (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket?.remoteAddress || null
         });
 
-        logger.info(`Key validation: "${key.substring(0, 10)}..." → ${result.valid ? "VALID" : "INVALID"}`);
+        const logStatus = result.valid ? "VALID" : (result.message || "INVALID").toUpperCase();
+        logger.info(`Key validation: "${key.substring(0, 10)}..." → ${logStatus}`);
 
         const statusCode = result.valid ? 200 : 403;
         res.status(statusCode).json({
