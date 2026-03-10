@@ -365,7 +365,7 @@ export const validateCallback = async (sessionId, signature, clientIp, userAgent
         type: "timed",
         maxDevices: 1,
         expiresAt,
-        note: `GetFreeKey | ${session.provider} | IP: ${ipHash.substring(0, 8)}...`,
+        note: `GetFreeKey | ${session.provider} | IP: ${currentIpHash.substring(0, 8)}...`,
         quantity: 1,
     });
 
