@@ -27,8 +27,6 @@ export const metadata: Metadata = {
     type: 'website',
     images: [{
       url: `${SITE_URL}/og-default.png`,
-      width: 1200,
-      height: 630,
       alt: 'ScriptHub - The Script Ecosystem',
     }],
     siteName: 'ScriptHub',

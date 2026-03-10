@@ -34,8 +34,6 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/og-default.png",
-        width: 1200,
-        height: 630,
         alt: "ScriptHub Platform",
       },
     ],
