@@ -360,23 +360,18 @@ export const softDeleteScript = async (id) => {
  * Returns true if the view was counted, false otherwise
  */
 export const recordView = async (scriptId, ipAddress) => {
-    // Check if this IP already viewed this script today (using UTC date to match index)
-    const checkQuery = `
-        SELECT id FROM script_views 
-        WHERE script_id = $1 AND ip_address = $2 AND (viewed_at AT TIME ZONE 'UTC')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::date
-        LIMIT 1
-    `;
-    const existing = await pool.query(checkQuery, [scriptId, ipAddress]);
-
-    if (existing.rows.length > 0) {
-        return false; // Already viewed today
-    }
-
-    // Insert new view record
-    await pool.query(
-        `INSERT INTO script_views (script_id, ip_address) VALUES ($1, $2)`,
+    // Attempt to insert a new view record
+    // Use ON CONFLICT DO NOTHING to handle cases where the (script_id, ip_address) unique constraint is met
+    // This is more efficient than a SELECT-then-INSERT and cleaner in the logs
+    const result = await pool.query(
+        `INSERT INTO script_views (script_id, ip_address) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING id`,
         [scriptId, ipAddress]
     );
+
+    // If result.rows.length === 0, it means the view already exists for this IP
+    if (result.rows.length === 0) {
+        return false;
+    }
 
     // Increment views count on scripts table
     await pool.query("UPDATE scripts SET views = views + 1 WHERE id = $1", [scriptId]);
