@@ -67,12 +67,12 @@ function ErrorContent() {
                                             <span className="text-[13px] font-mono text-offgray-400">
                                                 Please return and restart the process.
                                             </span>
-                                            <button
-                                                onClick={() => window.history.back()}
+                                            <a
+                                                href="https://scripthub.id"
                                                 className="ml-auto h-9 px-4 rounded-md text-[12px] font-medium transition-all inline-flex items-center justify-center min-w-[90px] bg-white/[0.03] text-offgray-300 hover:text-white border border-white/[0.06] hover:bg-white/[0.08]"
                                             >
-                                                Try Again
-                                            </button>
+                                                Start Over
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
