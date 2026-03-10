@@ -47,6 +47,8 @@ const isExcludedPath = (path) => {
     if (path.startsWith('/api/auth/discord/')) return true; // OAuth callbacks
     if (path.startsWith('/api/keys/public/session/')) return true; // Public session info (GET)
     if (path.startsWith('/api/keys/public/script/')) return true; // Public script info (GET)
+    if (path.match(/^\/api\/scripts\/[a-zA-Z0-9-]+\/view$/)) return true; // Script views (POST)
+    if (path.match(/^\/api\/scripts\/[a-zA-Z0-9-]+\/copy$/)) return true; // Script copies (POST)
     if (path === '/health') return true;
     if (path === '/api/status') return true;
     if (path === '/api/ping') return true;

@@ -1,0 +1,109 @@
+**SCRIPTHUB RELEASE NOTES - v1.2.1**
+**March 10, 2026**
+
+Resolved critical state management issues in the Studio's script publishing flow and implemented automated image optimization.
+
+**[STUDIO IMPROVEMENTS]**
+- **Loadstring Previews**: Studio automatically prepends [script_key = "YOUR_KEY"] to deployment loadstring previews when key validation is enabled.
+- **Toggle Hydration**: Editing screen now accurately reflects toggle states based on historical script configuration (e.g. Include Loader).
+- **Chart Rendering**: Fixed CSS height resolution issues that caused analytics bars to appear empty.
+- **Timezone Alignment**: Corrected chart date generation to use local browser time for accurate daily reporting.
+
+**[BACKEND & PERFORMANCE]**
+- **Automated WebP Conversion**: All uploaded assets (avatars, thumbnails, banners) are now automatically converted to WebP format.
+- **Image Compression**: Integrated server-side compression (Quality: 80) to significantly reduce page load times.
+- **Increased Upload Limits**: Raised the pre-processing upload buffer to 20MB to support high-resolution source assets.
+
+**[FIXES]**
+- **Default Status**: Fixed a backend bug where all new scripts were incorrectly defaulted to 'Draft' status regardless of user choice.
+- **Database Synchronization**: Resolved an issue where disabling the 'Include Loader' toggle failed to remove the associated URL from the database.
+- **Hydration Stability**: Fixed the [removeChild] error on public script detail pages caused by browser extension interference with the DOM.
+
+**[SEO]**
+- **Metadata Scaling**: Optimized crawling rules and metadata scaling to ensure perfect link previews on social platforms.
+
+--------------------------------------------------
+
+**SCRIPTHUB RELEASE NOTES - v1.2.0**
+**March 09, 2026**
+
+Major update introducing multi-layer script protection, universal executor compatibility for mobile and desktop, and deployment experience improvements.
+
+**[ADVANCED SCRIPT PROTECTION]**
+- **Multi-layer Protection**: New architecture with encrypted script delivery.
+- **Polymorphic System**: Server randomly selects from multiple variants per deployment to prevent decompilation.
+- **Protection Quota**: Monthly usage tracking system with real-time display of remaining and total limits.
+- **Quick Access**: Instant access to deployments after successful protection.
+- **Fresh Protection Support**: Ability to generate new variants from the original script at any time.
+
+**[UNIVERSAL EXECUTOR COMPATIBILITY]**
+- **Cross-Platform Support**: Automatic compatibility layer for executors lacking built-in libraries, primarily targeting mobile stability.
+- **Safe Execution Wrapper**: Implemented multi-method fallbacks for restricted execution environments.
+- **Smart Identification**: Enhanced device identification using multiple HWID detection methods for better reliability.
+- **Timestamp Precision**: Deployment timestamps now display exact date and time.
+
+**[SECURITY & INFRASTRUCTURE]**
+- **Challenge/Verify System**: Mandatory device verification before script delivery.
+- **Encoded Injection**: Endpoint and key protection via computationally hidden variables.
+- **Environment Detection**: Restricted access allowing only verified executors to load protected content.
+- **Server-Side Injection**: Automatic compatibility updates without requiring manual script changes.
+- **Performance Caching**: Request caching implemented to handle traffic spikes and ensure low latency.
+- **Automated Tracking**: Integrated usage tracking for advanced analytics and stability monitoring.
+
+**[FIXES]**
+- **Mobile Stabilization**: Resolved execution crashes on mobile executors caused by missing standard libraries.
+- **Math Fallback**: Fixed decryption failures when standard math libraries are unavailable by implementing an internal fallback.
+- **Dev Mode**: Corrected development mode serves to handle outdated logic and improved error reporting.
+- **Auth Flow**: Fixed variable inconsistencies in the authentication flow.
+
+--------------------------------------------------
+
+**SCRIPTHUB RELEASE NOTES - v1.1.0**
+**March 02, 2026**
+
+Comprehensive overview of the platform infrastructure, security protocols, and core features.
+
+**[ADDED]**
+- **Studio Suite**: Comprehensive tools for developers to publish and manage content with full descriptions and thumbnails.
+- **Organization System**: Content grouping implementation allowing related items to be categorized under dedicated pages.
+- **Compatibility Tagging**: Support for declaring specific execution environments.
+- **Discovery Ecosystem**: Integration of trending items and global search functionality.
+- **Admin Dashboard**: Full-scale administrative management capabilities.
+- **Official Gateway**: Multi-checkpoint system for platform support while maintaining a seamless user experience.
+- **Video Integration**: Video preview support for script detail pages.
+- **Legal Infrastructure**: Public Terms of Service and Privacy Policy documentation.
+- **Global Footer**: Responsive site navigation and social media resource integration.
+
+**[IMPROVED]**
+- **Delivery Speed**: Optimized loading times for dedicated subdomains through streamlined delivery protocols.
+- **Rate Limiting**: Refined rate limit headers and reduced latency for initial verification sequences.
+- **Waiting UI**: Redesigned pending interface with modern gradients and clear status indicators.
+- **Performance Optimization**: Removal of redundant background animations for low-end device compatibility.
+- **Gateway Timers**: Enhanced visual countdown accuracy for gateway checkpoints.
+
+**[CHANGED]**
+- **Layout Standardization**: Replaced legacy components with standard tags to resolve aspect ratio inconsistencies.
+- **Configuration Simplification**: Removed hardcoded third-party fields in favor of customizable direct links.
+- **Dynamic Constants**: Extracted static data into dynamic constants to support scalable release documentation.
+
+**[FIXES]**
+- **Button Routing**: Resolved navigation issues by correcting configuration variable mapping.
+- **Logic Bounds**: Fixed infinite loop scenarios on management pages.
+- **Media Scaling**: Corrected logo aspect ratios and responsive resizing behaviors on mobile viewports.
+
+**[SECURITY]**
+- **Bot Protection**: Advanced protection integrated for authentication limits and checkpoints.
+- **Signature Validation**: Robust session-to-device binding through signature verification.
+- **Access Control**: Comprehensive administrative lockdown and secure authority management.
+- **Sanitization**: Strict parameter validation and payload sanitization to prevent injection vectors.
+- **Credential Protection**: Enhanced protection through computational hiding of sensitive credentials.
+
+**[INFRASTRUCTURE]**
+- **Edge Routing**: Implemented edge-level distribution to isolate and optimize secure subdomains.
+- **Cross-Origin Policies**: Configured strict CORS policies to protect internal service communication.
+- **Dynamic Throttling**: Variable rate-limiting thresholds across sensitive endpoints.
+- **Zero-Downtime Migration**: Established architecture for persistent availability during updates.
+- **Footprint Reduction**: Optimized production environment by removing unused components.
+
+**Visit https://scripthub.id/studio to manage your deployments.**
+**© 2026 ScriptHub Ecosystem.**

@@ -10,7 +10,7 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
 
     try {
         const baseUrl = envConfig.apiBaseUrl;
-        const res = await fetch(`${baseUrl}/users/profile/${username}`, {
+        const res = await fetch(`${baseUrl}/users/${username}`, {
             next: { revalidate: 60 }
         });
 
