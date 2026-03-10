@@ -6,7 +6,7 @@
  * @param {Object} data - { keyValue, scriptId, hwid, executorName, robloxUsername, robloxUserId, ipAddress }
  * @returns {Object} { valid, key, message }
  */
-export const validateKey = async ({ keyValue, scriptId, hwid, executorName, robloxUsername, robloxUserId, ipAddress }) => {
+export const validateKey = async ({ keyValue, scriptId, hwid, executorName, robloxUsername, robloxUserId, ipAddress, placeId }) => {
     const client = await pool.connect();
 
     try {
@@ -17,7 +17,7 @@ export const validateKey = async ({ keyValue, scriptId, hwid, executorName, robl
             await client.query(
                 `INSERT INTO execution_logs (key_id, hwid, ip_address, executor_name, roblox_username, roblox_user_id, place_id, is_success, failure_reason)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-                [keyId, hwid || 'None', ipAddress || 'Unknown', executorName || null, robloxUsername || null, robloxUserId || null, data.placeId || null, isSuccess, failureReason || null]
+                [keyId, hwid || 'None', ipAddress || 'Unknown', executorName || null, robloxUsername || null, robloxUserId || null, placeId || null, isSuccess, failureReason || null]
             );
         };
 
