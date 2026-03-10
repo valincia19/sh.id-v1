@@ -1,5 +1,6 @@
 import * as monetizationService from "./monetization.service.js";
 import { checkIpScore } from "./ipScore.service.js";
+import { sha256 } from "../../utils/hmac.js";
 import logger from "../../utils/logger.js";
 import config from "../../config/index.js";
 
@@ -134,7 +135,19 @@ export const startSession = async (req, res) => {
 export const callbackWorkink = async (req, res) => {
     try {
         const workinkToken = req.query.token;
-        const { sessionId, signature } = parseSessionToken(req);
+        let { sessionId, signature } = parseSessionToken(req);
+
+        // Fallback: If cookie is missing due to browser privacy policies, find active session by IP
+        if (!sessionId || !signature) {
+            const clientIp = getClientIp(req);
+            const ipHash = sha256(clientIp);
+            const fallback = await monetizationService.getLatestSessionByIp(ipHash, "workink");
+            if (fallback.sessionId && fallback.signature) {
+                sessionId = fallback.sessionId;
+                signature = fallback.signature;
+                logger.info(`[MONETIZATION] IP Fallback used for Work.ink: session=${sessionId}`);
+            }
+        }
 
         logger.info(`[MONETIZATION] callbackWorkink: cookie=${req.cookies?.monetization_session ? 'present' : 'MISSING'}, sessionId=${sessionId}, workinkToken=${workinkToken?.substring(0, 15)}`);
 
@@ -236,7 +249,19 @@ export const callbackLinkvertise = async (req, res) => {
             return serveOgPage(res);
         }
 
-        const { sessionId, signature } = parseSessionToken(req);
+        let { sessionId, signature } = parseSessionToken(req);
+
+        // Fallback: If cookie is missing due to browser privacy policies, find active session by IP
+        if (!sessionId || !signature) {
+            const clientIp = getClientIp(req);
+            const ipHash = sha256(clientIp);
+            const fallback = await monetizationService.getLatestSessionByIp(ipHash, "linkvertise");
+            if (fallback.sessionId && fallback.signature) {
+                sessionId = fallback.sessionId;
+                signature = fallback.signature;
+                logger.info(`[MONETIZATION] IP Fallback used for Linkvertise: session=${sessionId}`);
+            }
+        }
 
         if (!sessionId || !signature) {
             return redirectError(res, "Missing session. Please start over.");

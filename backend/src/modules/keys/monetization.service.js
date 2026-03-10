@@ -60,6 +60,28 @@ export const getScriptSettings = async (slug) => {
 };
 
 /**
+ * Fallback mechanism: Find the latest unused session for an IP and provider.
+ * Used when strict browser cookie policies block the monetization session cookie.
+ */
+export const getLatestSessionByIp = async (ipHash, provider) => {
+    const result = await pool.query(
+        `SELECT id, signature FROM monetization_sessions 
+         WHERE ip_hash = $1 AND provider = $2 AND used = false 
+         ORDER BY created_at DESC LIMIT 1`,
+        [ipHash, provider]
+    );
+
+    if (result.rows.length === 0) {
+        return { sessionId: null, signature: null };
+    }
+
+    return {
+        sessionId: result.rows[0].id,
+        signature: result.rows[0].signature
+    };
+};
+
+/**
  * Start a new monetization session.
  *
  * @param {string} slug     - Script slug
