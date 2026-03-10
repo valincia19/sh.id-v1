@@ -384,18 +384,42 @@ print("Validation Successful! Loading script...")
                                     </div>
 
                                     <div className="mt-8">
-                                        <h3 className="text-xs font-semibold text-white mb-3">Payload Example</h3>
+                                        <h3 className="text-xs font-semibold text-white mb-3">Request Payload</h3>
                                         <CodeBlock language="json" code={`{
   "key": "SH-id581889ce6357438e82daf430c5c",
   "scriptId": "your-script-uuid",
-  "hwid": "unique-device-hardware-id"
+  "hwid": "unique-device-hardware-id",
+  "executor": "Delta",
+  "robloxUsername": "PlayerName",
+  "robloxUserId": 123456789,
+  "placeId": 16707611096
 }`} />
+                                        <div className="mt-4 space-y-2">
+                                            <p className="text-[10px] font-bold text-offgray-500 uppercase tracking-widest">Field Reference</p>
+                                            <div className="grid grid-cols-[100px_1fr] gap-x-4 gap-y-1.5 text-[11px]">
+                                                <code className="font-mono text-emerald-400">key</code>
+                                                <span className="text-offgray-400"><span className="text-red-400 text-[9px] font-bold mr-1">REQUIRED</span>The license key string</span>
+                                                <code className="font-mono text-emerald-400">scriptId</code>
+                                                <span className="text-offgray-400">UUID of the script this key belongs to</span>
+                                                <code className="font-mono text-emerald-400">hwid</code>
+                                                <span className="text-offgray-400"><span className="text-red-400 text-[9px] font-bold mr-1">REQUIRED</span>Hardware ID for device binding</span>
+                                                <code className="font-mono text-emerald-400">executor</code>
+                                                <span className="text-offgray-400"><span className="text-red-400 text-[9px] font-bold mr-1">REQUIRED</span>Executor name (Delta, Synapse, etc.)</span>
+                                                <code className="font-mono text-emerald-400">robloxUsername</code>
+                                                <span className="text-offgray-400"><span className="text-red-400 text-[9px] font-bold mr-1">REQUIRED</span>Player display name</span>
+                                                <code className="font-mono text-emerald-400">robloxUserId</code>
+                                                <span className="text-offgray-400"><span className="text-red-400 text-[9px] font-bold mr-1">REQUIRED</span>Player user ID (integer)</span>
+                                                <code className="font-mono text-emerald-400">placeId</code>
+                                                <span className="text-offgray-400">Roblox Place ID for telemetry</span>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div className="mt-8 space-y-6">
                                         <h3 className="text-xs font-semibold text-white mb-3">Response Scenarios</h3>
 
                                         <div className="space-y-4">
+                                            {/* 200 OK - Success */}
                                             <div>
                                                 <div className="flex items-center gap-2 mb-2">
                                                     <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-bold">200 OK</span>
@@ -406,49 +430,106 @@ print("Validation Successful! Loading script...")
   "valid": true,
   "message": "Key is valid.",
   "data": {
-    "type": "lifetime",
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "type": "timed",
     "status": "active",
     "max_devices": 3,
-    "expires_at": null,
-    "script_title": "Project Valincia"
+    "expires_at": "2026-04-10T09:42:31.439Z",
+    "script_title": "VinzHub | Escape Tsunami"
   }
 }`} />
                                             </div>
 
+                                            {/* 403 - Expired */}
                                             <div>
                                                 <div className="flex items-center gap-2 mb-2">
                                                     <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-[10px] font-mono font-bold">403 FORBIDDEN</span>
-                                                    <span className="text-[11px] text-offgray-400 font-medium">— Validation Failed</span>
-                                                </div>
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                                                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04] space-y-1">
-                                                        <p className="text-[10px] font-bold text-red-400/80 uppercase">Expired</p>
-                                                        <p className="text-[11px] text-offgray-500 italic">"Key has expired."</p>
-                                                    </div>
-                                                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04] space-y-1">
-                                                        <p className="text-[10px] font-bold text-red-400/80 uppercase">Revoked</p>
-                                                        <p className="text-[11px] text-offgray-500 italic">"Key has been revoked by the owner."</p>
-                                                    </div>
-                                                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04] space-y-1">
-                                                        <p className="text-[10px] font-bold text-red-400/80 uppercase">HWID Limit</p>
-                                                        <p className="text-[11px] text-offgray-500 italic">"Device limit reached (1)."</p>
-                                                    </div>
-                                                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04] space-y-1">
-                                                        <p className="text-[10px] font-bold text-red-400/80 uppercase">Non-Existent</p>
-                                                        <p className="text-[11px] text-offgray-500 italic">"Invalid key. Key does not exist."</p>
-                                                    </div>
-                                                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04] space-y-1">
-                                                        <p className="text-[10px] font-bold text-red-400/80 uppercase">Wrong Script</p>
-                                                        <p className="text-[11px] text-offgray-500 italic">"Key does not belong to this script."</p>
-                                                    </div>
+                                                    <span className="text-[11px] text-offgray-400 font-medium">— Key Expired</span>
                                                 </div>
                                                 <CodeBlock language="json" code={`{
   "success": false,
   "valid": false,
-  "message": "Key has expired."
+  "message": "Key has expired.",
+  "data": {
+    "type": "timed",
+    "status": "expired",
+    "script_title": "VinzHub | Escape Tsunami",
+    "expires_at": "2026-03-10T09:42:31.439Z"
+  }
 }`} />
                                             </div>
 
+                                            {/* 403 - Revoked */}
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-[10px] font-mono font-bold">403 FORBIDDEN</span>
+                                                    <span className="text-[11px] text-offgray-400 font-medium">— Key Revoked</span>
+                                                </div>
+                                                <CodeBlock language="json" code={`{
+  "success": false,
+  "valid": false,
+  "message": "Key has been revoked by the owner.",
+  "data": {
+    "type": "lifetime",
+    "status": "revoked",
+    "script_title": "Project Valincia",
+    "expires_at": null
+  }
+}`} />
+                                            </div>
+
+                                            {/* 403 - HWID Limit */}
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-[10px] font-mono font-bold">403 FORBIDDEN</span>
+                                                    <span className="text-[11px] text-offgray-400 font-medium">— Device Limit Reached</span>
+                                                </div>
+                                                <CodeBlock language="json" code={`{
+  "success": false,
+  "valid": false,
+  "message": "Device limit reached (1). This key is already bound to 1 device(s).",
+  "data": {
+    "type": "lifetime",
+    "status": "active",
+    "script_title": "Project Valincia",
+    "max_devices": 1,
+    "expires_at": null
+  }
+}`} />
+                                            </div>
+
+                                            {/* 403 - Wrong Script */}
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-[10px] font-mono font-bold">403 FORBIDDEN</span>
+                                                    <span className="text-[11px] text-offgray-400 font-medium">— Wrong Script</span>
+                                                </div>
+                                                <CodeBlock language="json" code={`{
+  "success": false,
+  "valid": false,
+  "message": "Key does not belong to this script.",
+  "data": {
+    "type": "timed",
+    "status": "active",
+    "script_title": "VinzHub | Escape Tsunami"
+  }
+}`} />
+                                            </div>
+
+                                            {/* 403 - Non-Existent */}
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-[10px] font-mono font-bold">403 FORBIDDEN</span>
+                                                    <span className="text-[11px] text-offgray-400 font-medium">— Key Not Found</span>
+                                                </div>
+                                                <CodeBlock language="json" code={`{
+  "success": false,
+  "valid": false,
+  "message": "Invalid key. Key does not exist."
+}`} />
+                                            </div>
+
+                                            {/* 400 - Bad Request */}
                                             <div>
                                                 <div className="flex items-center gap-2 mb-2">
                                                     <span className="px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-400 text-[10px] font-mono font-bold">400 BAD REQUEST</span>
@@ -457,8 +538,21 @@ print("Validation Successful! Loading script...")
                                                 <CodeBlock language="json" code={`{
   "error": "ValidationError",
   "details": [
-    { "msg": "HWID is required", "param": "hwid", "location": "body" }
+    { "msg": "HWID is required", "param": "hwid", "location": "body" },
+    { "msg": "Executor name is required", "param": "executor", "location": "body" }
   ]
+}`} />
+                                            </div>
+
+                                            {/* 500 - Server Error */}
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="px-1.5 py-0.5 rounded bg-gray-500/10 text-gray-400 text-[10px] font-mono font-bold">500 SERVER ERROR</span>
+                                                    <span className="text-[11px] text-offgray-400 font-medium">— Internal Failure</span>
+                                                </div>
+                                                <CodeBlock language="json" code={`{
+  "error": "ServerError",
+  "message": "Failed to validate key"
 }`} />
                                             </div>
                                         </div>

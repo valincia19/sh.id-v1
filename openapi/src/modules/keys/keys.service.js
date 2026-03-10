@@ -3,7 +3,7 @@
 /**
  * Validate a license key and optionally bind an HWID
  * Records telemetry data to execution_logs
- * @param {Object} data - { keyValue, scriptId, hwid, executorName, robloxUsername, robloxUserId, ipAddress }
+ * @param {Object} data - { keyValue, scriptId, hwid, executorName, robloxUsername, robloxUserId, ipAddress, placeId }
  * @returns {Object} { valid, key, message }
  */
 export const validateKey = async ({ keyValue, scriptId, hwid, executorName, robloxUsername, robloxUserId, ipAddress, placeId }) => {
@@ -43,19 +43,31 @@ export const validateKey = async ({ keyValue, scriptId, hwid, executorName, robl
         if (scriptId && key.script_id !== scriptId) {
             await logExecution(key.id, false, "Key does not belong to this script.");
             await client.query("COMMIT");
-            return { valid: false, message: "Key does not belong to this script." };
+            return {
+                valid: false,
+                message: "Key does not belong to this script.",
+                key: { type: key.type, status: key.status, script_title: key.script_title }
+            };
         }
 
         // 3. Check key status
         if (key.status === "revoked") {
             await logExecution(key.id, false, "Key has been revoked by the owner.");
             await client.query("COMMIT");
-            return { valid: false, message: "Key has been revoked by the owner." };
+            return {
+                valid: false,
+                message: "Key has been revoked by the owner.",
+                key: { type: key.type, status: key.status, script_title: key.script_title, expires_at: key.expires_at }
+            };
         }
         if (key.status === "expired") {
             await logExecution(key.id, false, "Key has expired.");
             await client.query("COMMIT");
-            return { valid: false, message: "Key has expired." };
+            return {
+                valid: false,
+                message: "Key has expired.",
+                key: { type: key.type, status: key.status, script_title: key.script_title, expires_at: key.expires_at }
+            };
         }
 
         // 4. Check expiry for timed keys
@@ -63,7 +75,11 @@ export const validateKey = async ({ keyValue, scriptId, hwid, executorName, robl
             await client.query(`UPDATE license_keys SET status = 'expired' WHERE id = $1`, [key.id]);
             await logExecution(key.id, false, "Key has expired.");
             await client.query("COMMIT");
-            return { valid: false, message: "Key has expired." };
+            return {
+                valid: false,
+                message: "Key has expired.",
+                key: { type: key.type, status: "expired", script_title: key.script_title, expires_at: key.expires_at }
+            };
         }
 
         // 5. Handle HWID device binding
@@ -81,6 +97,7 @@ export const validateKey = async ({ keyValue, scriptId, hwid, executorName, robl
                     return {
                         valid: false,
                         message: `Device limit reached (${key.max_devices}). This key is already bound to ${devices.length} device(s).`,
+                        key: { type: key.type, status: key.status, script_title: key.script_title, max_devices: key.max_devices, expires_at: key.expires_at }
                     };
                 }
                 await client.query(`INSERT INTO key_devices (key_id, hwid) VALUES ($1, $2)`, [key.id, hwid]);
