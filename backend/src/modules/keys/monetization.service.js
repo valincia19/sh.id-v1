@@ -299,11 +299,12 @@ export const validateCallback = async (sessionId, signature, clientIp, userAgent
     }
 
     // 3. Verify HMAC signature (proves session wasn't tampered)
-    const ipHash = sha256(clientIp);
-    const uaHash = sha256(userAgent);
+    const currentIpHash = sha256(clientIp);
 
+    // Verify using the original hashes stored in the DB, not the current ones
+    // This allows us to validate the cookie itself hasn't been tampered with.
     const isValid = verifySession(
-        signature, sessionId, ipHash, uaHash, session.provider, session.script_slug
+        signature, sessionId, session.ip_hash, session.ua_hash, session.provider, session.script_slug
     );
 
     if (!isValid) {
@@ -311,10 +312,11 @@ export const validateCallback = async (sessionId, signature, clientIp, userAgent
         throw Object.assign(new Error("Invalid or tampered session"), { statusCode: 403 });
     }
 
-    // 4. IP binding check
-    if (session.ip_hash !== ipHash) {
-        logger.warn(`[MONETIZATION] IP mismatch for session ${sessionId}`);
-        throw Object.assign(new Error("Session bound to different device"), { statusCode: 403 });
+    // 4. IP binding Check (Relaxed for mobile users)
+    // We only log if it changed, we do not throw an error because mobile IPs and UAs change frequently
+    // between clicking the link and returning from the ad provider.
+    if (session.ip_hash !== currentIpHash) {
+        logger.warn(`[MONETIZATION] IP mismatch for session ${sessionId} (Mobile IP rotation likely, allowing)`);
     }
 
     // 5. Anti-speedrun: minimum time elapsed (skip in development/sandbox mode)
