@@ -392,17 +392,76 @@ print("Validation Successful! Loading script...")
 }`} />
                                     </div>
 
-                                    <div className="mt-8">
-                                        <h3 className="text-xs font-semibold text-white mb-3">Success Response</h3>
-                                        <CodeBlock language="json" code={`{
+                                    <div className="mt-8 space-y-6">
+                                        <h3 className="text-xs font-semibold text-white mb-3">Response Scenarios</h3>
+
+                                        <div className="space-y-4">
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-bold">200 OK</span>
+                                                    <span className="text-[11px] text-offgray-400 font-medium">— Validation Successful</span>
+                                                </div>
+                                                <CodeBlock language="json" code={`{
   "success": true,
   "valid": true,
+  "message": "Key is valid.",
   "data": {
     "type": "lifetime",
     "status": "active",
-    "max_devices": 3
+    "max_devices": 3,
+    "expires_at": null,
+    "script_title": "Project Valincia"
   }
 }`} />
+                                            </div>
+
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-[10px] font-mono font-bold">403 FORBIDDEN</span>
+                                                    <span className="text-[11px] text-offgray-400 font-medium">— Validation Failed</span>
+                                                </div>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                                                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04] space-y-1">
+                                                        <p className="text-[10px] font-bold text-red-400/80 uppercase">Expired</p>
+                                                        <p className="text-[11px] text-offgray-500 italic">"Key has expired."</p>
+                                                    </div>
+                                                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04] space-y-1">
+                                                        <p className="text-[10px] font-bold text-red-400/80 uppercase">Revoked</p>
+                                                        <p className="text-[11px] text-offgray-500 italic">"Key has been revoked by the owner."</p>
+                                                    </div>
+                                                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04] space-y-1">
+                                                        <p className="text-[10px] font-bold text-red-400/80 uppercase">HWID Limit</p>
+                                                        <p className="text-[11px] text-offgray-500 italic">"Device limit reached (1)."</p>
+                                                    </div>
+                                                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04] space-y-1">
+                                                        <p className="text-[10px] font-bold text-red-400/80 uppercase">Non-Existent</p>
+                                                        <p className="text-[11px] text-offgray-500 italic">"Invalid key. Key does not exist."</p>
+                                                    </div>
+                                                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04] space-y-1">
+                                                        <p className="text-[10px] font-bold text-red-400/80 uppercase">Wrong Script</p>
+                                                        <p className="text-[11px] text-offgray-500 italic">"Key does not belong to this script."</p>
+                                                    </div>
+                                                </div>
+                                                <CodeBlock language="json" code={`{
+  "success": false,
+  "valid": false,
+  "message": "Key has expired."
+}`} />
+                                            </div>
+
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-400 text-[10px] font-mono font-bold">400 BAD REQUEST</span>
+                                                    <span className="text-[11px] text-offgray-400 font-medium">— Missing Parameters</span>
+                                                </div>
+                                                <CodeBlock language="json" code={`{
+  "error": "ValidationError",
+  "details": [
+    { "msg": "HWID is required", "param": "hwid", "location": "body" }
+  ]
+}`} />
+                                            </div>
+                                        </div>
                                     </div>
                                 </section>
                             </div>
