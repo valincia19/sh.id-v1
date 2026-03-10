@@ -25,7 +25,7 @@ export const validateKey = async (req, res) => {
             return res.status(400).json({ error: "ValidationError", details: errors.array() });
         }
 
-        const { key, scriptId, hwid, executor, robloxUsername, robloxUserId } = req.body;
+        const { key, scriptId, hwid, executor, robloxUsername, robloxUserId, placeId } = req.body;
 
         const result = await keysService.validateKey({
             keyValue: key,
@@ -34,6 +34,7 @@ export const validateKey = async (req, res) => {
             executorName: executor || null,
             robloxUsername: robloxUsername || null,
             robloxUserId: robloxUserId ? parseInt(robloxUserId, 10) : null,
+            placeId: placeId || null,
             ipAddress: (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket?.remoteAddress || null
         });
 

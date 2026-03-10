@@ -15,9 +15,9 @@ export const validateKey = async ({ keyValue, scriptId, hwid, executorName, robl
         // Helper to log executions
         const logExecution = async (keyId, isSuccess, failureReason) => {
             await client.query(
-                `INSERT INTO execution_logs (key_id, hwid, ip_address, executor_name, roblox_username, roblox_user_id, is_success, failure_reason)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-                [keyId, hwid || 'None', ipAddress || 'Unknown', executorName || null, robloxUsername || null, robloxUserId || null, isSuccess, failureReason || null]
+                `INSERT INTO execution_logs (key_id, hwid, ip_address, executor_name, roblox_username, roblox_user_id, place_id, is_success, failure_reason)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                [keyId, hwid || 'None', ipAddress || 'Unknown', executorName || null, robloxUsername || null, robloxUserId || null, data.placeId || null, isSuccess, failureReason || null]
             );
         };
 
