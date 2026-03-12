@@ -363,10 +363,19 @@ export const updateScript = async (req, res) => {
         const scriptCacheKey = `script:${script.slug}`;
         await deleteCache(scriptCacheKey);
 
+        const resultScript = updatedScript || script;
+
+        // 7. Notification: Broadcast to Discord if status changed to published or if already published
+        if (status === "published" || (status === undefined && script.status === "published")) {
+            discordBot.broadcastNewScript(resultScript, req.user).catch((err) => {
+                logger.error("Failed to broadcast updated script to Discord: %s", err.message);
+            });
+        }
+
         res.json({
             success: true,
             message: "Script updated successfully",
-            data: { ...(updatedScript || script), tags: scriptTags },
+            data: { ...resultScript, tags: scriptTags },
         });
     } catch (error) {
         logger.error("Update Script Error: %o", error);

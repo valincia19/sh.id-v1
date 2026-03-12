@@ -60,22 +60,30 @@ class DiscordBotService {
             if (!channel) return;
 
             const scriptUrl = `${config.appUrl}/s/${script.slug}`;
+            const targetHubId = script.hub_id || script.hubId;
             
+            logger.debug(`Discord Broadcast Debug: Script ID=${script.id}, Hub ID=${targetHubId}`);
+
             // Resolve Author (Hub or Uploader)
             let authorName = uploader.display_name || uploader.username;
             let authorIcon = uploader.avatar_url ? `https://cdn.discordapp.com/avatars/${uploader.discord_id}/${uploader.avatar_url}.png` : null;
 
-            if (script.hub_id) {
+            if (targetHubId) {
                 try {
                     const { getHubById } = await import("../hubs/hubs.service.js");
-                    const hub = await getHubById(script.hub_id);
+                    const hub = await getHubById(targetHubId);
                     if (hub) {
+                        logger.debug(`Discord Broadcast Debug: Found Hub="${hub.name}"`);
                         authorName = hub.name;
                         authorIcon = hub.logo_url ? `https://cdn.scripthub.id/${hub.logo_url}` : null;
+                    } else {
+                        logger.warn(`Discord Broadcast: Hub ID ${targetHubId} not found in database`);
                     }
                 } catch (hubErr) {
                     logger.error(`Failed to fetch hub info for broadcast: ${hubErr.message}`);
                 }
+            } else {
+                logger.debug(`Discord Broadcast Debug: No Hub ID found for script "${script.title}"`);
             }
 
             const embed = new EmbedBuilder()
