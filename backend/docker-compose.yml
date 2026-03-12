@@ -111,7 +111,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
     command: npm run start
 
   # Automated PostgreSQL Backups (daily at 3:00 AM UTC → upload to S3/CDN)
