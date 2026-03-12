@@ -6,6 +6,7 @@ import { body, validationResult } from "express-validator";
 import logger from "../../utils/logger.js";
 import { deleteS3Object } from "../../utils/s3Delete.js";
 import { lookupRobloxGame } from "../../utils/roblox.js";
+import { discordBot } from "../discord/discord.bot.js";
 
 /**
  * Validation Rules for creating a script
