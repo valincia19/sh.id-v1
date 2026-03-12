@@ -90,7 +90,6 @@ services:
         condition: service_healthy
     volumes:
       - .:/app # Sync entire project for dev
-      - /app/node_modules # Don't overwrite container's node_modules
       - ./uploads:/app/uploads
       - ./logs:/app/logs
     command: npm run start
@@ -115,7 +114,6 @@ services:
         condition: service_healthy
     volumes:
       - ../openapi:/app # Sync Open API project for dev
-      - /app/node_modules
     command: npm run start
 
   # Automated PostgreSQL Backups (daily at 3:00 AM UTC → upload to S3/CDN)
