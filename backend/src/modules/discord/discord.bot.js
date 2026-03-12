@@ -59,7 +59,7 @@ class DiscordBotService {
             const channel = await this.client.channels.fetch(this.logChannelId);
             if (!channel) return;
 
-            const scriptUrl = `${config.app.url}/s/${script.slug}`;
+            const scriptUrl = `${config.appUrl}/s/${script.slug}`;
             
             const embed = new EmbedBuilder()
                 .setColor("#00ff00")
