@@ -172,13 +172,10 @@ if (process.env.NODE_ENV !== 'production') {
   app.get("/docs/json", (req, res) => res.json(swaggerSpec));
 }
 
-// Guard: Redirect /v1/scripts/* to the correct API path
-app.use("/v1/scripts", (req, res) => {
-  res.status(404).json({
-    error: "NotFound",
-    message: "Scripts API is available at /api/scripts, not /v1/scripts.",
-  });
-});
+import scriptsRoutes from "./modules/scripts/scripts.routes.js";
+
+// Alias: Allow /v1/scripts/* to map to the scripts API to support legacy/documented endpoints
+app.use("/v1/scripts", scriptsRoutes);
 
 // ============================================
 // Public CDN Proxy Route (no auth required, but rate limited)
