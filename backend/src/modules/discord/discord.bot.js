@@ -49,7 +49,7 @@ class DiscordBotService {
 
     /**
      * Broadcasts a new script upload to the configured Discord channel
-     * @param {Object} script - The script object containing title, description, slug, etc.
+     * @param {Object} script - The script object containing title, description, slug, hub_id, etc.
      * @param {Object} uploader - The user object of the uploader
      */
     async broadcastNewScript(script, uploader) {
@@ -61,21 +61,42 @@ class DiscordBotService {
 
             const scriptUrl = `${config.appUrl}/s/${script.slug}`;
             
+            // Resolve Author (Hub or Uploader)
+            let authorName = uploader.display_name || uploader.username;
+            let authorIcon = uploader.avatar_url ? `https://cdn.discordapp.com/avatars/${uploader.discord_id}/${uploader.avatar_url}.png` : null;
+
+            if (script.hub_id) {
+                try {
+                    const { getHubById } = await import("../hubs/hubs.service.js");
+                    const hub = await getHubById(script.hub_id);
+                    if (hub) {
+                        authorName = hub.name;
+                        authorIcon = hub.logo_url ? `https://cdn.scripthub.id/${hub.logo_url}` : null;
+                    }
+                } catch (hubErr) {
+                    logger.error(`Failed to fetch hub info for broadcast: ${hubErr.message}`);
+                }
+            }
+
             const embed = new EmbedBuilder()
-                .setColor("#00ff00")
+                .setColor("#000000") // Black color as requested
                 .setTitle(`🚀 New Script Uploaded: ${script.title}`)
                 .setURL(scriptUrl)
                 .setAuthor({ 
-                    name: uploader.display_name || uploader.username,
-                    iconURL: uploader.avatar_url ? `https://cdn.discordapp.com/avatars/${uploader.discord_id}/${uploader.avatar_url}.png` : null
+                    name: authorName,
+                    iconURL: authorIcon
                 })
                 .setDescription(script.description ? script.description.substring(0, 150) + "..." : "No description provided.")
                 .addFields(
-                    { name: '🔥 Link', value: `[Click here to view!](${scriptUrl})`, inline: true },
-                    { name: '👤 Uploader', value: uploader.username, inline: true }
+                    { name: '🔥 Link', value: `[Click here to view!](${scriptUrl})`, inline: true }
                 )
                 .setTimestamp()
                 .setFooter({ text: "ScriptHub.id Auto-Notifier" });
+
+            // Only show uploader if NOT a hub script (as per specific request: "namahub nya aja usernya jangan di tampilkan")
+            if (!script.hub_id) {
+                embed.addFields({ name: '👤 Uploader', value: uploader.username, inline: true });
+            }
 
             if (script.thumbnail_url) {
                 embed.setImage(`https://cdn.scripthub.id/${script.thumbnail_url}`);
