@@ -16,10 +16,16 @@ const isTest = env === 'test';
 
 // 2. Fail-Fast Helper
 const requireEnv = (key, type = 'string') => {
-  const value = process.env[key];
+  let value = process.env[key];
   if (!value) {
     throw new Error(`CRITICAL CONFIGURATION VULNERABILITY: Missing required environment variable: ${key}`);
   }
+
+  // Robust parsing: trim and remove literal quotes if they leaked from .env
+  if (typeof value === 'string') {
+    value = value.trim().replace(/^['"]|['"]$/g, '');
+  }
+
   if (type === 'number') {
     const parsed = parseInt(value, 10);
     if (isNaN(parsed)) {
@@ -32,8 +38,14 @@ const requireEnv = (key, type = 'string') => {
 };
 
 const optionalEnv = (key, defaultValue = undefined, type = 'string') => {
-  const value = process.env[key];
+  let value = process.env[key];
   if (!value) return defaultValue;
+
+  // Robust parsing: trim and remove literal quotes if they leaked from .env
+  if (typeof value === 'string') {
+    value = value.trim().replace(/^['"]|['"]$/g, '');
+  }
+
   if (type === 'number') {
     const parsed = parseInt(value, 10);
     if (isNaN(parsed)) throw new Error(`CRITICAL: Environment variable ${key} must be a valid number.`);
