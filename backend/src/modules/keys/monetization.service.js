@@ -421,12 +421,11 @@ const loadOfficialSession = async (sessionId, signature, clientIp, userAgent) =>
         throw Object.assign(new Error("Session already used"), { statusCode: 409 });
     }
 
-    // Verify HMAC signature
-    const ipHash = sha256(clientIp);
-    const uaHash = sha256(userAgent);
-
+    // Verify HMAC signature using STORED hashes (not current client hashes).
+    // The signature was created with the original IP+UA at session start,
+    // so we must verify against the same stored values.
     const isValid = verifySession(
-        signature, sessionId, ipHash, uaHash, session.provider, session.script_slug
+        signature, sessionId, session.ip_hash, session.ua_hash, session.provider, session.script_slug
     );
 
     if (!isValid) {
@@ -434,10 +433,10 @@ const loadOfficialSession = async (sessionId, signature, clientIp, userAgent) =>
         throw Object.assign(new Error("Invalid or tampered session"), { statusCode: 403 });
     }
 
-    // IP binding
-    if (session.ip_hash !== ipHash) {
-        logger.warn(`[OFFICIAL] IP mismatch for session ${sessionId}`);
-        throw Object.assign(new Error("Session bound to different device"), { statusCode: 403 });
+    // IP binding (relaxed for mobile IP rotation)
+    const currentIpHash = sha256(clientIp);
+    if (session.ip_hash !== currentIpHash) {
+        logger.warn(`[OFFICIAL] IP changed for session ${sessionId} (Mobile IP rotation likely, allowing)`);
     }
 
     return session;

@@ -712,7 +712,17 @@ export const getPublicScripts = async (req, res) => {
 export const getScriptById = async (req, res) => {
     try {
         const { id } = req.params;
-        const script = await scriptService.getScriptById(id);
+
+        // Validate UUID format to prevent PostgreSQL 'invalid input syntax for type uuid' errors
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+        let script;
+        if (isUUID) {
+            script = await scriptService.getScriptById(id);
+        } else {
+            // Fallback to slug lookup for non-UUID identifiers
+            script = await scriptService.getScriptBySlug(id, req.user?.userId || null);
+        }
 
         if (!script) {
             return res.status(404).json({
