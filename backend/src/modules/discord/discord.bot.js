@@ -13,8 +13,8 @@ class DiscordBotService {
         this.isReady = false;
         this.logChannelId = config.discordBot?.logChannelId;
 
-        this.client.once("ready", () => {
-            logger.info(`Discord Bot connected as ${this.client.user.tag}`);
+        this.client.once("clientReady", (readyClient) => {
+            logger.info(`Discord Bot connected as ${readyClient.user.tag}`);
             this.isReady = true;
         });
 
@@ -81,9 +81,11 @@ class DiscordBotService {
                 embed.setImage(`https://cdn.scripthub.id/${script.thumbnail_url}`);
             }
 
+            logger.info(`Broadcasting script to Discord: "${script.title}"`);
             await channel.send({ embeds: [embed] });
+            logger.info(`Successfully broadcasted script "${script.title}" to Discord channel ${this.logChannelId}`);
         } catch (error) {
-            logger.error(`Failed to broadcast script to Discord: ${error.message}`);
+            logger.error(`Failed to broadcast script "${script.title}" to Discord: ${error.message}`);
         }
     }
 }
