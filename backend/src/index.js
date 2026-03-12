@@ -11,6 +11,7 @@ import { healthCheck as dbHealthCheck, closePool } from "./db/postgres.js";
 import { healthCheck as redisHealthCheck, closeRedis } from "./db/redis.js";
 import apiRoutes from "./routes/index.js";
 import { initializeDiscordStrategy } from "./config/passport/discord.strategy.js";
+import { discordBot } from "./modules/discord/discord.bot.js";
 import { serveDeployment, challengeDeployment, verifyDeployment } from "./modules/deployments/deployments.controller.js";
 import logger, { stream } from "./utils/logger.js";
 import swaggerUi from "swagger-ui-express";
@@ -103,6 +104,9 @@ app.use(passport.initialize());
 
 // Initialize OAuth strategies
 initializeDiscordStrategy();
+
+// Start Discord Bot (runs silently if token not provided)
+discordBot.start();
 
 // ============================================
 // Health Check Endpoint

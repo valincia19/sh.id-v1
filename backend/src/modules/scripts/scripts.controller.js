@@ -219,6 +219,14 @@ export const createScript = async (req, res) => {
 
         logger.info("Script created: %s by user %s (game: %s)", title, ownerId, gameId);
 
+        // 6. Notification: Broadcast to Discord
+        if (status === "published" || status === "unlisted") {
+            // Background task: trigger Discord Hook (non-blocking)
+            discordBot.broadcastNewScript(newScript, req.user).catch((err) => {
+                logger.error("Failed to broadcast script to Discord: %s", err.message);
+            });
+        }
+
         res.status(201).json({
             success: true,
             message: "Script created successfully",

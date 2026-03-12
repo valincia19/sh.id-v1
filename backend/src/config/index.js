@@ -117,9 +117,14 @@ const config = {
     clientId: optionalEnv('DISCORD_CLIENT_ID'),
     clientSecret: optionalEnv('DISCORD_CLIENT_SECRET'),
     callbackUrl: optionalEnv('DISCORD_CALLBACK_URL'),
-    botToken: optionalEnv('DISCORD_BOT_TOKEN'),
     guildId: optionalEnv('DISCORD_GUILD_ID'),
     scope: ['identify', 'email', 'guilds.join'],
+  },
+
+  // Discord Bot
+  discordBot: {
+    token: optionalEnv('DISCORD_BOT_TOKEN'),
+    logChannelId: optionalEnv('DISCORD_LOG_CHANNEL_ID'),
   },
 
   // Email
