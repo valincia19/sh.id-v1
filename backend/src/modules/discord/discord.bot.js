@@ -79,8 +79,8 @@ class DiscordBotService {
             }
 
             const embed = new EmbedBuilder()
-                .setColor("#000000") // Black color as requested
-                .setTitle(`🚀 New Script Uploaded: ${script.title}`)
+                .setColor("#000000") // Black color
+                .setTitle(`New Script Uploaded: ${script.title}`)
                 .setURL(scriptUrl)
                 .setAuthor({ 
                     name: authorName,
@@ -88,14 +88,19 @@ class DiscordBotService {
                 })
                 .setDescription(script.description ? script.description.substring(0, 150) + "..." : "No description provided.")
                 .addFields(
-                    { name: '🔥 Link', value: `[Click here to view!](${scriptUrl})`, inline: true }
+                    { name: 'Link', value: `[Click here to view!](${scriptUrl})`, inline: true }
                 )
                 .setTimestamp()
                 .setFooter({ text: "ScriptHub.id Auto-Notifier" });
 
-            // Only show uploader if NOT a hub script (as per specific request: "namahub nya aja usernya jangan di tampilkan")
+            // Set Hub Logo as Thumbnail if it's a hub script
+            if (script.hub_id && authorIcon) {
+                embed.setThumbnail(authorIcon);
+            }
+
+            // Only show uploader if NOT a hub script
             if (!script.hub_id) {
-                embed.addFields({ name: '👤 Uploader', value: uploader.username, inline: true });
+                embed.addFields({ name: 'Uploader', value: uploader.username, inline: true });
             }
 
             if (script.thumbnail_url) {
